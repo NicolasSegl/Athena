@@ -7,9 +7,7 @@
 #include <cmath>
 #include <random>
 
-// git test for documentation branch
-
-// gives appropriate values to all pieces bitboards and occupied/empty bitboards
+// sets appropriate bits on white/black pieces bitboards and occupied/empty bitboards
 void Board::setBitboards()
 {
 	currentPosition.whitePiecesBB  = currentPosition.whitePawnsBB | currentPosition.whiteRooksBB | currentPosition.whiteKnightsBB | 
@@ -22,7 +20,7 @@ void Board::setBitboards()
 	currentPosition.emptyBB	   = ~currentPosition.occupiedBB;
 }
 
-// sets a bit on the appropriate piece bitboard based on the character in the FEN string
+// sets a specific bit on the appropriate piece bitboard based on the character and square in the FEN string
 void Board::setFENPiecePlacement(char pieceType, Byte square)
 {
 	switch (pieceType)

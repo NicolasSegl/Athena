@@ -7,6 +7,8 @@
 #include <cmath>
 #include <random>
 
+// git test for documentation branch
+
 // gives appropriate values to all pieces bitboards and occupied/empty bitboards
 void Board::setBitboards()
 {

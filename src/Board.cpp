@@ -43,7 +43,7 @@ void Board::setFENPiecePlacement(char pieceType, Byte square)
 // using ascii text manipulation to find the little endian file mapping coordinate from a letter/number chess coordinate (i.e. a4, h3)
 Byte Board::getSquareNumberCoordinate(const std::string& stringCoordinate)
 {
-	return (stringCoordinate[1] - 49) * 8 + (stringCoordinate[0] - 97);
+	return (stringCoordinate[1] - ASCII::NUMBER_ONE_CODE) * 8 + (stringCoordinate[0] - ASCII::LETTER_A_CODE);
 }
 
 // converts little endian file mapping coordinate to letter/number chess coordinate (also using some ascii text manipulation)
@@ -52,8 +52,8 @@ std::string Board::getSquareStringCoordinate(Byte square)
 	std::string moveString;
 	moveString.resize(2);
 
-	moveString[0] = (char)(97 + square % 8);
-	moveString[1] = (char)(49 + square / 8);
+	moveString[0] = (char)(ASCII::LETTER_A_CODE + square % 8);
+	moveString[1] = (char)(ASCII::NUMBER_ONE_CODE + square / 8);
 
 	return moveString;
 }

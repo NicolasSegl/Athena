@@ -54,8 +54,6 @@ namespace AthenaConstants
 namespace Evaluation
 {
 	const int CHECKMATE_SCORE = 1000000;
-	
-	
 }
 
 namespace FEN
@@ -71,4 +69,10 @@ namespace FEN
 		const int fiftyMoveCounter = 4;
 		const int totalMoves	   = 5;
 	}
+}
+
+namespace ASCII
+{
+	int NUMBER_ONE_CODE = 49;
+	int LETTER_A_CODE   = 97;
 }

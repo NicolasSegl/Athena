@@ -57,8 +57,9 @@ void UCI::respondGo(const std::vector<std::string>& commandVec)
 		if		(commandVec[command] == "wtime" && mCG.getSideToMove() == SIDE_WHITE) athenaTime = std::stof(commandVec[command + 1]);
 		else if (commandVec[command] == "btime" && mCG.getSideToMove() == SIDE_BLACK) athenaTime = std::stof(commandVec[command + 1]);
 	}
-	std::cout << "colour: " << mCG.getSideToMove() << std::endl;
-	std::cout << "bestmove " << mCG.findBestMove(mCG.getSideToMove(), athenaTime) << "\n";
+
+    std::string bestMove = mCG.findBestMove(mCG.getSideToMove(), athenaTime);
+    std::cout << "bestmove " << bestMove << "\n";
 }
 
 // ponderhit is a command. look into this
@@ -93,5 +94,3 @@ void UCI::run()
 			processCommand(uciInput);
 	}
 }
-
-// probably the moves aren't updating the board properly as Athena was making completely stupid moves

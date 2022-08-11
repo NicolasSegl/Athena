@@ -1,40 +1,40 @@
 #include "Athena.h"
-#include "SquarePieceTables.h"
 #include "Outcomes.h"
+#include "SquarePieceTables.h"
 #include "utils.h"
 
-#include <iostream>
-#include <fstream>
-#include <limits>
 #include <algorithm>
 #include <chrono>
+#include <fstream>
+#include <iostream>
+#include <limits>
 
 const int INF = std::numeric_limits<int>::max();
 
-// still issues with castling making more kings
+// values of the pieces relative to centipawns (1 pawn is worth 100 centipawns)
+const int KING_VALUE = 20000;
+const int QUEEN_VALUE = 900;
+const int ROOK_VALUE = 500;
+const int BISHOP_VALUE = 330;
+const int KNIGHT_VALUE = 320;
+const int PAWN_VALUE = 100;
+
+// initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
-{
-    mKingValue   = 20000;
-    mQueenValue  = 900;
-    mRookValue   = 500;
-    mBishopValue = 330;
-    mKnightValue = 320;
-    mPawnValue   = 100;
-    
-    // by default
-    mSide = SIDE_BLACK;
+{   
     mDepth = 6;
     mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
     clearTranspositionTable();
 }
 
+// sets all the values in the transposition table to null (so we know that no data has yet been found at a given index)
 void Athena::clearTranspositionTable()
 {
     for (int i = 0; i < mTranspositionTableSize; i++)
         mTranspositionTable[i].hashFlag = TranspositionHashEntry::NONEXISTENT;
 }
 
-
+// calls negamax and returns the best move that it has found. also outputs some rudimentary data about the search
 MoveData Athena::search(Board* board, float timeToMove)
 {
     mNodes = 0;
@@ -130,23 +130,23 @@ int Athena::evaluatePosition(Board* board, float midgameValue)
         // consider piece value and piece square table
         if (BB::boardSquares[square] & board->currentPosition.whitePawnsBB)
         {
-            whiteEval += mPawnValue + pst::pawnTable[63 - square];
+            whiteEval += PAWN_VALUE + pst::pawnTable[63 - square];
         }
-        else if (BB::boardSquares[square] & board->currentPosition.whiteKnightsBB) whiteEval += mKnightValue + pst::knightTable[63 - square];
-        else if (BB::boardSquares[square] & board->currentPosition.whiteBishopsBB) whiteEval += mBishopValue + pst::bishopTable[63 - square];
-        else if (BB::boardSquares[square] & board->currentPosition.whiteRooksBB)   whiteEval += mRookValue + pst::rookTable[63 - square];
-        else if (BB::boardSquares[square] & board->currentPosition.whiteQueensBB)  whiteEval += mQueenValue + pst::queenTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
         else if (BB::boardSquares[square] & board->currentPosition.whiteKingBB)
             // so a pawn hash table is just a transposition table but for pawn structures??
-            whiteEval += mKingValue + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
+            whiteEval += KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
 
-        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)   blackEval += mPawnValue + pst::pawnTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += mKnightValue + pst::knightTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += mBishopValue + pst::bishopTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += mRookValue + pst::rookTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackQueensBB)  blackEval += mQueenValue + pst::queenTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)   blackEval += PAWN_VALUE + pst::pawnTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
         else if (BB::boardSquares[square] & board->currentPosition.blackKingBB)
-            blackEval += mKingValue + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
+            blackEval += KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
     }
     
     return whiteEval - blackEval;
@@ -246,17 +246,17 @@ int Athena::getPieceValue(PieceTypes::Types pieceType)
     switch (pieceType)
     {
         case PieceTypes::KING:
-            return mKingValue;
+            return KING_VALUE;
         case PieceTypes::QUEEN:
-            return mQueenValue;
+            return QUEEN_VALUE;
         case PieceTypes::ROOK:
-            return mRookValue;
+            return ROOK_VALUE;
         case PieceTypes::BISHOP:
-            return mBishopValue;
+            return BISHOP_VALUE;
         case PieceTypes::KNIGHT:
-            return mKnightValue;
+            return KNIGHT_VALUE;
         case PieceTypes::PAWN:
-            return mPawnValue;
+            return PAWN_VALUE;
         default:
             return 0;
     }

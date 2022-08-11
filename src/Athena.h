@@ -35,7 +35,6 @@ private:
     void insertTranspositionEntry(TranspositionHashEntry* hashEntry, int maxEval, int ogAlpha, int beta);
     
 	int mDepth;
-    int mKingValue, mQueenValue, mRookValue, mBishopValue, mKnightValue, mPawnValue;
     Colour mSide;
     MoveData mMoveToMake;
     bool mActive = false;

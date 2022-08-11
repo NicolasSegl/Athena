@@ -281,7 +281,7 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 			*moveData->capturedPieceBB  ^= targetBB;
 			*moveData->capturedColourBB ^= targetBB; 
 
-			// the origin square is now empty. we do not xor the target square, however, as it was previously occupied so to xor it would unset the bit
+			// the origin square is now empty. we do not XOR the target square, however, as it was previously occupied so to XOR it would unset the bit
 			currentPosition.occupiedBB  ^= originBB;
 			currentPosition.emptyBB	    ^= originBB;
 		}
@@ -317,14 +317,20 @@ Byte Board::computeKingSquare(Bitboard kingBB)
     return -1;
 }
 
-// returns true if the specified square is attacked, false otherwise
-// makes bitboards containing bits set for each piece that can perform a specific type of attack (diagonal, L, straight line, pawn attacks),
-// then &s them teststst
+/* 
+   returns true if the specified square is attacked, false otherwise
+   it achieves this by making bitboards containing bits set for all pieces capable of making select moves (diagonal, straight, etc) for a certain side
+   it then compares these bitboards to the possible moves such pieces could make at the square's location
+ 
+   for example, bishops and queens can attack on diagonals, so we make a bitboard containing all of the bishops and queens.
+   afterwards, we AND this bitboard with the possible diagonal moves from the square being attacked. if the value is > 0, 
+   then either a queen or a bishop has a diagonal attack that is hitting the square (so return true)
+*/
 bool Board::squareAttacked(Byte square, Colour attackingSide)
 {
 	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
 
-	// this gets all of the diagonal attacks of the pawns
+	// this gets all of the diagonal attacks of the pawns depending on the side attacking
 	if (attackingSide == SIDE_WHITE)
 	{
 		if ((BB::boardSquares[square] & (opPawnsBB << 7)) || (BB::boardSquares[square] & (opPawnsBB << 9))) return true;
@@ -353,6 +359,7 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
     return false;
 }
 
+// if the move made generated an en passant square, set the current en passant square for the current position
 void Board::setEnPassantSquares(MoveData* moveData)
 {
 	currentPosition.enPassantSquare = 0;
@@ -374,6 +381,14 @@ void Board::deleteMoveFromHistory()
 	mPly--;
 }
 
+/* 
+    using the information in the MoveData struct, perform the following:
+		update the bitboards affected in the move
+		check legality of the move (i.e. if it would result in a check)
+		update castle privileges
+		set any en passant squares, update the fifty move counter, and change the side to move
+		insert the move into the move history (unless it was one of the two castle moves making up the whole move)
+*/
 bool Board::makeMove(MoveData* moveData)
 {
 	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
@@ -381,7 +396,7 @@ bool Board::makeMove(MoveData* moveData)
 		if (!makeCastleMove(moveData))
 			return false;
 	}
-	else
+	else // a non-castle move
 	{
 		updateBitboardWithMove(moveData);
 
@@ -389,7 +404,6 @@ bool Board::makeMove(MoveData* moveData)
 
 		if (squareAttacked(kingSquare, !moveData->side))
 		{
-			//currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 			// passing in false so that we do not update the zobrist key/history, as we never actually added it here
 			// this means that otherwise it would be removing the previous zobrist key, eventually giving negative 
 			// ply numbers and undefined behaviour
@@ -401,10 +415,11 @@ bool Board::makeMove(MoveData* moveData)
 	setEnPassantSquares(moveData);
 
 	currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
-	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE) // ctrl+f all MoveData::EncodingBits calls
+	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE)
 	{
 		moveData->fiftyMoveCounter = currentPosition.fiftyMoveCounter;
 
+		// reset the fifty move counter if there was a capture or a pawn advance, otherwise increment it
 		if (moveData->capturedPieceBB || moveData->pieceBB == &currentPosition.whitePawnsBB || moveData->pieceBB == &currentPosition.blackPawnsBB)
 			currentPosition.fiftyMoveCounter = 0;
 		else
@@ -420,6 +435,13 @@ bool Board::makeMove(MoveData* moveData)
 	return true;
 }
 
+/*
+	using the information in the MoveData struct, this functions takes a move back. It does so by:
+		undoing any pawn promotions
+		updating the bitboards that were affected in the move
+		reseting en passant squares, castle privileges, side to move, and fifty move counter by using the values stored in the move data
+		deleting the move from the move history
+*/
 bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 {
 	// undoing moves is no longer returning the taken pieces back ? 
@@ -431,7 +453,7 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 		updateBitboardWithMove(moveData);
 	}
 
-	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE && positionUpdated) // ctrl+f all MoveData::EncodingBits calls
+	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE && positionUpdated)
 	{
 		mCurrentZobristKey = mZobristKeyHistory[mPly - 1];
 
@@ -445,6 +467,7 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 	return true;
 }
 
+// replaces the promoted pawn back to a pawn and removes the piece the pawn promoted to from its respective bitboard
 void Board::undoPromotion(MoveData* moveData)
 {
 	if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO || moveData->moveType == MoveData::EncodingBits::ROOK_PROMO ||
@@ -487,6 +510,8 @@ void Board::undoPromotion(MoveData* moveData)
 	}
 }
 
+// removes pawn from its bitboard via XORING then adds the piece the pawn promoted to 
+// to its respective bitboard via ORING the pawn's target square (the back rank)
 void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 {
 	md->setMoveType(promoteTo);
@@ -496,8 +521,8 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 	{
 		currentPosition.whitePawnsBB ^= BB::boardSquares[md->targetSquare];
 
-		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.whiteQueensBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.whiteRooksBB |= BB::boardSquares[md->targetSquare];
+		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.whiteQueensBB  |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.whiteRooksBB   |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.whiteBishopsBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.whiteKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
@@ -505,8 +530,8 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 	{
 		currentPosition.blackPawnsBB ^= BB::boardSquares[md->targetSquare];
 
-		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.blackQueensBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.blackRooksBB |= BB::boardSquares[md->targetSquare];
+		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.blackQueensBB  |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.blackRooksBB   |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.blackBishopsBB |= BB::boardSquares[md->targetSquare];
 		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.blackKnightsBB |= BB::boardSquares[md->targetSquare];
 	}

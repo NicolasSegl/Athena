@@ -43,6 +43,7 @@ void Board::setFENPiecePlacement(char pieceType, Byte square)
 // using ascii text manipulation to find the little endian file mapping coordinate from a letter/number chess coordinate (i.e. a4, h3)
 Byte Board::getSquareNumberCoordinate(const std::string& stringCoordinate)
 {
+	// calculates the square by multiplying the number (row/rank) by 8, then adding the number (column/file)
 	return (stringCoordinate[1] - ASCII::NUMBER_ONE_CODE) * 8 + (stringCoordinate[0] - ASCII::LETTER_A_CODE);
 }
 
@@ -52,15 +53,15 @@ std::string Board::getSquareStringCoordinate(Byte square)
 	std::string moveString;
 	moveString.resize(2);
 
-	moveString[0] = (char)(ASCII::LETTER_A_CODE + square % 8);
-	moveString[1] = (char)(ASCII::NUMBER_ONE_CODE + square / 8);
+	moveString[0] = (char)(ASCII::LETTER_A_CODE   + square % 8); // gets the letter
+ 	moveString[1] = (char)(ASCII::NUMBER_ONE_CODE + square / 8); // gets the number
 
 	return moveString;
 }
 
 // interprets all the data from an FEN string. this includes:
 // setting appropriate bits in associated bitboards (i.e. white pawns in the white pawns bitboard, setting occupied bitboard, etc)
-// taking en side to move, passant square, half-move counter, and castle privileges data into account  
+// taking side to move, en passant square, half-move counter, and castle privileges data into account  
 void Board::setPositionFEN(const std::string& fenString)
 {
 	currentPosition.reset();
@@ -91,12 +92,11 @@ void Board::setPositionFEN(const std::string& fenString)
 	std::vector<std::string> dataVec;
 	splitString(fenString, dataVec, ' ');
 	
-	if (dataVec[FEN::Fields::sideToPlay][0] == 'w') 
-		currentPosition.sideToMove = SIDE_WHITE;
-	else	
-		currentPosition.sideToMove = SIDE_BLACK;
+	// set side to move
+	if (dataVec[FEN::Fields::sideToPlay][0] == 'w') currentPosition.sideToMove = SIDE_WHITE;
+	else											currentPosition.sideToMove = SIDE_BLACK;
 
-
+	// set castle privileges 
 	for (int character = 0; character < dataVec[FEN::Fields::castlePrivileges].size(); character++)
 	{
 		if		(dataVec[FEN::Fields::castlePrivileges][character] == 'k') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
@@ -105,30 +105,33 @@ void Board::setPositionFEN(const std::string& fenString)
 		else if (dataVec[FEN::Fields::castlePrivileges][character] == 'Q') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
 	}
 
+	// set en passant square
 	if (dataVec[FEN::Fields::enPassantSquare] != "-") 
 		currentPosition.enPassantSquare = getSquareNumberCoordinate(dataVec[FEN::Fields::enPassantSquare]);
 
+	// set the number of moves
 	currentPosition.fiftyMoveCounter = std::stoi(dataVec[FEN::Fields::fiftyMoveCounter]);
 
 	setBitboards();
 }
 
 // make a move formatted long algebraic notation (for uci purposes)
-// only use this when taking in input from uci, as it calculates all possible moves each time it is called
 bool Board::makeMoveLAN(const std::string& lanString)
 {
-	// fill two strings with 2 characters, one for the origin square of the piece and the other for the target square
+	// disect the LAN string into a string for the origin square and the target square
 	std::string from(lanString.begin(), lanString.begin() + 2);
 	std::string to(lanString.begin() + 2, lanString.begin() + 4);
 
+	// convert the above strings into number coordinates
 	Byte moveOriginSquare = getSquareNumberCoordinate(from);
 	Byte moveTargetSquare = getSquareNumberCoordinate(to);
 
-	// compare this moves with the possible moves of the piece on this origin square to see if it is a legal move
 	std::vector<MoveData> moveVec;
 	mMoveGenerator.calculatePieceMoves(this, currentPosition.sideToMove, moveOriginSquare, moveVec, false);
 
 	for (int i = 0; i < moveVec.size(); i++)
+		// compare the origin/target squares of the move provided with the origin/target squares of the possible moves at that square
+		// if there's a match, then make the move (using the move data calculated above)
 		if (moveVec[i].originSquare == moveOriginSquare && moveVec[i].targetSquare == moveTargetSquare)
 		{
 			makeMove(&moveVec[i]);
@@ -161,7 +164,7 @@ void Board::init()
 
 	mZobristKeyGenerator.initHashKeys();
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
-	mPly = -1;
+	mPly = -1; // should calculate this in get fen string
 	mFiftyMoveCounter = 0;
 	insertMoveIntoHistory();
 	currentPosition.castlePrivileges = (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE | (Byte)CastlingPrivilege::WHITE_LONG_CASTLE |

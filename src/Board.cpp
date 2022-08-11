@@ -8,7 +8,7 @@
 #include <random>
 
 // sets appropriate bits on white/black pieces bitboards and occupied/empty bitboards
-void Board::setBitboards()
+void Board::setAuxillaryBitboards()
 {
 	currentPosition.whitePiecesBB  = currentPosition.whitePawnsBB | currentPosition.whiteRooksBB | currentPosition.whiteKnightsBB | 
 									 currentPosition.whiteBishopsBB | currentPosition.whiteQueensBB | currentPosition.whiteKingBB;
@@ -65,6 +65,8 @@ std::string Board::getSquareStringCoordinate(Byte square)
 void Board::setPositionFEN(const std::string& fenString)
 {
 	currentPosition.reset();
+	mPly = -1;
+	insertMoveIntoHistory(); // mPly now equals 0
 
 	// loop through all the chatacters of the FEN string and set the piece placement data into the engine's abstractions
 	int column = 0;
@@ -92,9 +94,13 @@ void Board::setPositionFEN(const std::string& fenString)
 	std::vector<std::string> dataVec;
 	splitString(fenString, dataVec, ' ');
 	
-	// set side to move
+	// set side to move and adjust current ply (using the total number of full moves at the end of the FEN data)
 	if (dataVec[FEN::Fields::sideToPlay][0] == 'w') currentPosition.sideToMove = SIDE_WHITE;
-	else											currentPosition.sideToMove = SIDE_BLACK;
+	else
+	{
+		// actually mPly-- but if side is white?
+		currentPosition.sideToMove = SIDE_BLACK;
+	}
 
 	// set castle privileges 
 	for (int character = 0; character < dataVec[FEN::Fields::castlePrivileges].size(); character++)
@@ -112,7 +118,7 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set the number of moves
 	currentPosition.fiftyMoveCounter = std::stoi(dataVec[FEN::Fields::fiftyMoveCounter]);
 
-	setBitboards();
+	setAuxillaryBitboards();
 }
 
 // make a move formatted long algebraic notation (for uci purposes)
@@ -164,8 +170,7 @@ void Board::init()
 
 	mZobristKeyGenerator.initHashKeys();
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
-	mPly = -1; // should calculate this in get fen string
-	mFiftyMoveCounter = 0;
+	mPly = -1; // so that the initial position inserted into the zobirst key history has an index of 0
 	insertMoveIntoHistory();
 	currentPosition.castlePrivileges = (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE | (Byte)CastlingPrivilege::WHITE_LONG_CASTLE |
 									   (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE | (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
@@ -401,12 +406,12 @@ bool Board::makeMove(MoveData* moveData)
 	currentPosition.castlePrivileges &= ~moveData->castlePrivilegesRevoked;
 	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE) // ctrl+f all MoveData::EncodingBits calls
 	{
-		moveData->fiftyMoveCounter = mFiftyMoveCounter;
+		moveData->fiftyMoveCounter = currentPosition.fiftyMoveCounter;
 
 		if (moveData->capturedPieceBB || moveData->pieceBB == &currentPosition.whitePawnsBB || moveData->pieceBB == &currentPosition.blackPawnsBB)
-			mFiftyMoveCounter = 0;
+			currentPosition.fiftyMoveCounter = 0;
 		else
-			mFiftyMoveCounter++;
+			currentPosition.fiftyMoveCounter++;
 
 		currentPosition.sideToMove = !currentPosition.sideToMove;
 		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
@@ -429,19 +434,13 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 		updateBitboardWithMove(moveData);
 	}
 
-	//if (positionUpdated)
-//		mCurrentZobristKey = mZobristKeyHistory[mPly - 1];
-
-	//currentPosition.enPassantSquare = moveData->enPassantSquare;
-	//currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
-
 	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE && positionUpdated) // ctrl+f all MoveData::EncodingBits calls
 	{
 		mCurrentZobristKey = mZobristKeyHistory[mPly - 1];
 
 		currentPosition.enPassantSquare = moveData->enPassantSquare;
 		currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
-		mFiftyMoveCounter = moveData->fiftyMoveCounter;
+		currentPosition.fiftyMoveCounter = moveData->fiftyMoveCounter;
 		currentPosition.sideToMove = !currentPosition.sideToMove;
 		deleteMoveFromHistory();
 	}

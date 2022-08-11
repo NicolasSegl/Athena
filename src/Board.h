@@ -22,9 +22,8 @@ private:
 	ZobristKey mZobristKeyHistory[1000];
 
 	short mPly;
-	short mFiftyMoveCounter;
 
-	void setBitboards();
+	void setAuxillaryBitboards();
 
 	// functions for making/unmaking moves
 	void setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveData* rookMD);

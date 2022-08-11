@@ -134,9 +134,10 @@ bool Board::makeMoveLAN(const std::string& lanString)
 
 	std::vector<MoveData> moveVec;
 	mMoveGenerator.calculatePieceMoves(this, currentPosition.sideToMove, moveOriginSquare, moveVec, false);
+	mMoveGenerator.calculateCastleMoves(this, currentPosition.sideToMove, moveVec);
 
 	for (int i = 0; i < moveVec.size(); i++)
-		// compare the origin/target squares of the move provided with the origin/target squares of the possible moves at that square
+		// compare the origin/target squares of the move provided with the origin/target squares of the possible moves at that square (plus potential castle moves)
 		// if there's a match, then make the move (using the move data calculated above)
 		if (moveVec[i].originSquare == moveOriginSquare && moveVec[i].targetSquare == moveTargetSquare)
 		{
@@ -360,11 +361,6 @@ void Board::setEnPassantSquares(MoveData* moveData)
 	else if (moveData->pieceBB == &currentPosition.blackPawnsBB && moveData->originSquare - moveData->targetSquare == 16)
 		currentPosition.enPassantSquare = moveData->targetSquare + 8;
 }
-
-// more moves are getting deleted than inserted. this should never happen.
-// i would guess it's because in makeMove, sometimes this function is never
-// called, however in unmakemove, it is called every time without fail?
-// but we only ever want to call it if it was called while making the move in the first place
 
 void Board::insertMoveIntoHistory()
 {

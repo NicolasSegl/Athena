@@ -100,6 +100,8 @@ int Athena::evaluatePawnValue(Board* board, int square, Bitboard pawnBB)
     //if ()
 
     // double pawn penalty
+
+    return 0;
 }
 
 int Athena::evaluatePosition(Board* board, float midgameValue)

@@ -15,7 +15,6 @@ private:
     void initPawnLT(Colour side, Byte pawnLoc);
     
     // the following functions are used when generating moves
-    void calculateCastleMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
     Bitboard calculatePsuedoMove(Board* board, MoveData* md, Bitboard& pieceBB);
 
     void setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md);
@@ -47,4 +46,5 @@ public:
     
     void calculateSideMoves(Board* board, Colour side, bool captureOnly = false);
     void calculateCaptureMoves(Board* board, Colour side);
+    void calculateCastleMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
 };

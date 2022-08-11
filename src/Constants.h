@@ -73,6 +73,6 @@ namespace FEN
 
 namespace ASCII
 {
-	int NUMBER_ONE_CODE = 49;
-	int LETTER_A_CODE   = 97;
+	const int NUMBER_ONE_CODE = 49;
+	const int LETTER_A_CODE   = 97;
 }

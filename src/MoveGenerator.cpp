@@ -279,6 +279,24 @@ Bitboard* MoveGenerator::getPieceBitboard(Board* board, Byte square, Colour side
     return nullptr;
 }
 
+/*
+
+
+
+
+
+
+there could be huge improvements to the finding of castle moves.
+a much more maintanable, readable, and efficient way is possible
+we are calulating it every time, but we should be at least checking the privileges before bothering
+
+
+
+
+
+
+*/
+
 void MoveGenerator::calculateSideMoves(Board* board, Colour side, bool captureOnly)
 {
     std::vector<MoveData>& moveVec = board->getMovesRef(side);
@@ -288,6 +306,7 @@ void MoveGenerator::calculateSideMoves(Board* board, Colour side, bool captureOn
     for (int square = 0; square < 64; square++)
         calculatePieceMoves(board, side, square, moveVec, captureOnly);
 
+    // could we remove this and only calculate castle moves when we come across a king?
     if (!captureOnly)
         calculateCastleMoves(board, side, moveVec);
 }

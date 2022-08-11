@@ -57,6 +57,7 @@ void UCI::respondGo(const std::vector<std::string>& commandVec)
 		if		(commandVec[command] == "wtime" && mCG.getSideToMove() == SIDE_WHITE) athenaTime = std::stof(commandVec[command + 1]);
 		else if (commandVec[command] == "btime" && mCG.getSideToMove() == SIDE_BLACK) athenaTime = std::stof(commandVec[command + 1]);
 	}
+	std::cout << "colour: " << mCG.getSideToMove() << std::endl;
 	std::cout << "bestmove " << mCG.findBestMove(mCG.getSideToMove(), athenaTime) << "\n";
 }
 

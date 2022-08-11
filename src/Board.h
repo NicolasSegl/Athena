@@ -66,8 +66,8 @@ public:
 	Byte computeKingSquare(Bitboard kingBB);
 	bool squareAttacked(Byte square, Colour attackingSide);
 
-	ZobristKey* getZobristKeyHistory()	   { return mZobristKeyHistory; }
-	short getCurrentPly()				   { return mPly;				}
-	short getFiftyMoveCounter()			   { return mFiftyMoveCounter;  }
+	ZobristKey* getZobristKeyHistory()	   { return mZobristKeyHistory;				   }
+	short getCurrentPly()				   { return mPly;							   }
+	short getFiftyMoveCounter()			   { return currentPosition.fiftyMoveCounter;  }
 	std::vector<MoveData>& getMovesRef(Colour side);
 };

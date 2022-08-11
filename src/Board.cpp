@@ -214,6 +214,7 @@ void Board::setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveDa
     }
 }
 
+// if the castle move is legal, this function will make 2 moves that will mimic a castle move (by moving the king and the rook in one move)
 bool Board::makeCastleMove(MoveData* md)
 {
     static MoveData kingMove;
@@ -260,7 +261,7 @@ bool Board::makeCastleMove(MoveData* md)
     return true;
 }
 
-// after a move, use bitwise operators to set or unset the appropriate bits in the bitboards affected by the mvoe
+// after a move, use bitwise operators to set or unset the appropriate bits in the bitboards affected by the move
 void Board::updateBitboardWithMove(MoveData* moveData)
 {
 	Bitboard originBB = BB::boardSquares[moveData->originSquare];

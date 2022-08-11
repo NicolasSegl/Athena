@@ -318,7 +318,7 @@ Byte Board::computeKingSquare(Bitboard kingBB)
 
 // returns true if the specified square is attacked, false otherwise
 // makes bitboards containing bits set for each piece that can perform a specific type of attack (diagonal, L, straight line, pawn attacks),
-// then &s them 
+// then &s them teststst
 bool Board::squareAttacked(Byte square, Colour attackingSide)
 {
 	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;

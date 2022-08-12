@@ -33,8 +33,8 @@ private:
 	void undoPromotion(MoveData* moveData);
 
 	// zobrist keys
-	void insertMoveIntoHistory();
-	void deleteMoveFromHistory();
+	void insertMoveIntoHistory(short ply);
+	void deleteMoveFromHistory(short ply);
 
 	// fen strings
 	void setFENPiecePlacement(char pieceType, Byte square);

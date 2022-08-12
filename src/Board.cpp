@@ -120,9 +120,7 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set the current ply
 	mPly += 2 * std::stoi(dataVec[FEN::Fields::numFullMoves]);
 
-	// decrement mPly here because it will be incremented when inserting the move. maybe we should pass in where we want to insert the move?
-	mPly -= 2;
-	insertMoveIntoHistory();
+	insertMoveIntoHistory(mPly--);
 
 	setAuxillaryBitboards();
 }
@@ -177,8 +175,8 @@ void Board::init()
 
 	mZobristKeyGenerator.initHashKeys();
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
-	mPly = -1; // so that the initial position inserted into the zobirst key history has an index of 0
-	insertMoveIntoHistory();
+	mPly = 0; // so that the initial position inserted into the zobirst key history has an index of 0
+	insertMoveIntoHistory(mPly++);
 	currentPosition.castlePrivileges = (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE | (Byte)CastlingPrivilege::WHITE_LONG_CASTLE |
 									   (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE | (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
 }
@@ -375,16 +373,14 @@ void Board::setEnPassantSquares(MoveData* moveData)
 		currentPosition.enPassantSquare = moveData->targetSquare + 8;
 }
 
-void Board::insertMoveIntoHistory()
+void Board::insertMoveIntoHistory(short ply)
 {
-	mPly++;
-	mZobristKeyHistory[mPly] = mCurrentZobristKey;
+	mZobristKeyHistory[ply] = mCurrentZobristKey;
 }
 
-void Board::deleteMoveFromHistory()
+void Board::deleteMoveFromHistory(short ply)
 {
-	mZobristKeyHistory[mPly] = 0;
-	mPly--;
+	mZobristKeyHistory[ply] = 0;
 }
 
 /* 
@@ -433,7 +429,7 @@ bool Board::makeMove(MoveData* moveData)
 
 		currentPosition.sideToMove = !currentPosition.sideToMove;
 		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
-		insertMoveIntoHistory();
+		insertMoveIntoHistory(++mPly);
 	}
 	else
 		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
@@ -467,7 +463,7 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 		currentPosition.castlePrivileges ^= moveData->castlePrivilegesRevoked;
 		currentPosition.fiftyMoveCounter = moveData->fiftyMoveCounter;
 		currentPosition.sideToMove = !currentPosition.sideToMove;
-		deleteMoveFromHistory();
+		deleteMoveFromHistory(mPly--);
 	}
 
 	return true;

@@ -2,7 +2,7 @@
 
 namespace pst
 {
-	// taken from https://www.chessprogramming.org/Simplified_Evaluation_Function
+	// values taken from https://www.chessprogramming.org/Simplified_Evaluation_Function
 
 	int pawnTable[64] =
 	{

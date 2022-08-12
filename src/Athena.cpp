@@ -46,6 +46,7 @@ MoveData Athena::search(Board* board, float timeToMove)
     return mMoveToMake;
 }
 
+// finds an opening move from book.txt (file provided by tscp, an educational open source chess engine)
 std::string Athena::getOpeningBookMove(Board* board, const std::vector<std::string>& lanStringHistory)
 {
     std::ifstream bookFile;

@@ -67,7 +67,7 @@ namespace FEN
 		const int castlePrivileges = 2;
 		const int enPassantSquare  = 3;
 		const int fiftyMoveCounter = 4;
-		const int totalMoves	   = 5;
+		const int numFullMoves	   = 5;
 	}
 }
 

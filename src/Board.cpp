@@ -65,8 +65,6 @@ std::string Board::getSquareStringCoordinate(Byte square)
 void Board::setPositionFEN(const std::string& fenString)
 {
 	currentPosition.reset();
-	mPly = -1;
-	insertMoveIntoHistory(); // mPly now equals 0
 
 	// loop through all the chatacters of the FEN string and set the piece placement data into the engine's abstractions
 	int column = 0;
@@ -93,14 +91,15 @@ void Board::setPositionFEN(const std::string& fenString)
 	// fill dataVec with the remaining data (en passant square, castle privileges, half-move counter, side to move) and parse into engine
 	std::vector<std::string> dataVec;
 	splitString(fenString, dataVec, ' ');
-	
+
 	// set side to move and adjust current ply (using the total number of full moves at the end of the FEN data)
-	if (dataVec[FEN::Fields::sideToPlay][0] == 'w') currentPosition.sideToMove = SIDE_WHITE;
-	else
+	if (dataVec[FEN::Fields::sideToPlay][0] == 'w')
 	{
-		// actually mPly-- but if side is white?
-		currentPosition.sideToMove = SIDE_BLACK;
+		mPly = -1; // so that when we add 2 times the number of full moves, we get the proper ply if the side to move is white
+		currentPosition.sideToMove = SIDE_WHITE;
 	}
+	else
+		currentPosition.sideToMove = SIDE_BLACK;
 
 	// set castle privileges 
 	for (int character = 0; character < dataVec[FEN::Fields::castlePrivileges].size(); character++)
@@ -117,6 +116,13 @@ void Board::setPositionFEN(const std::string& fenString)
 
 	// set the number of moves
 	currentPosition.fiftyMoveCounter = std::stoi(dataVec[FEN::Fields::fiftyMoveCounter]);
+
+	// set the current ply
+	mPly += 2 * std::stoi(dataVec[FEN::Fields::numFullMoves]);
+
+	// decrement mPly here because it will be incremented when inserting the move. maybe we should pass in where we want to insert the move?
+	mPly -= 2;
+	insertMoveIntoHistory();
 
 	setAuxillaryBitboards();
 }

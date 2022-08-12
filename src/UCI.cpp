@@ -27,21 +27,29 @@ void UCI::respondIsReady()
 	std::cout << "readyok\n";
 }
 
-// response to commands involving a move made by the player ("position fen (fen string) moves...")
+// response to commands involving a move made by the player ("position FEN (fen string) moves...")
 void UCI::respondPosition(const std::vector<std::string>& commandVec)
 {
-	std::string fenString = commandVec[1];
+	// index of the commandVec where moves start being described. if the FEN is startpos (the initial position), this index is 3
+	// this can be seen by observing the uci command: position startpos moves ... (first move is at index 3)
+	int movesCommandIndex = 3;
 
-	if (fenString == "startpos")
+	if (commandVec[1] == "startpos") // index of 1 is the start of the FEN string
 		mCG.setPositionFEN(FEN::start);
 	else
+	{
+		std::string fenString = "";
+		for (int i = 1; i <= 6; i++)
+			fenString += commandVec[i] + " ";
+		fenString.pop_back();
+
 		mCG.setPositionFEN(fenString);
+		movesCommandIndex = 7;
+	}
 
 	// element at index 2 states simply "moves"
-	for (int i = 3; i < commandVec.size(); i++)
+	for (int i = movesCommandIndex; i < commandVec.size(); i++)
 		mCG.makeMoveLAN(commandVec[i]);
-
-	// here set athena's colour
 }
 
 // response to "go" command (telling the ai to search)

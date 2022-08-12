@@ -334,14 +334,17 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 {
 	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
 
-	// this gets all of the diagonal attacks of the pawns depending on the side attacking
+	// this gets all of the diagonal attacks of the pawns depending on the side attacking. by clearing the A and H files,
+	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
 	if (attackingSide == SIDE_WHITE)
 	{
-		if ((BB::boardSquares[square] & (opPawnsBB << 7)) || (BB::boardSquares[square] & (opPawnsBB << 9))) return true;
+		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9))) 
+			return true;
 	}
 	else
 	{
-		if ((BB::boardSquares[square] & (opPawnsBB >> 7)) || (BB::boardSquares[square] & (opPawnsBB >> 9))) return true;
+		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 9)))
+			return true;
 	}
     
     Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKnightsBB : currentPosition.blackKnightsBB;

@@ -355,13 +355,12 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
     
     Bitboard opBishopsQueensBB = attackingSide == SIDE_WHITE ? currentPosition.whiteBishopsBB | currentPosition.whiteQueensBB  
 															 : currentPosition.blackBishopsBB | currentPosition.blackQueensBB;
-    Bitboard enemyPieces    = attackingSide == SIDE_WHITE ? currentPosition.whitePiecesBB : currentPosition.blackPiecesBB;
     Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? currentPosition.blackPiecesBB : currentPosition.whitePiecesBB;
-    if (mMoveGenerator.computePseudoBishopMoves(square, enemyPieces, friendlyPieces) & opBishopsQueensBB) return true;
+    if (mMoveGenerator.computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces) & opBishopsQueensBB) return true;
     
     Bitboard opRooksQueens = attackingSide == SIDE_WHITE ? currentPosition.whiteRooksBB | currentPosition.whiteQueensBB  
 														 : currentPosition.blackRooksBB | currentPosition.blackQueensBB;
-    if (mMoveGenerator.computePseudoRookMoves(square, enemyPieces, friendlyPieces) & opRooksQueens) return true;
+    if (mMoveGenerator.computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces) & opRooksQueens) return true;
     
     return false;
 }

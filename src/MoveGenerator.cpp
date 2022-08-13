@@ -5,6 +5,8 @@
 
 void MoveGenerator::init()
 {
+    initRays();
+
     for (int pieceLoc = 0; pieceLoc < 64; pieceLoc++)
     {
         initKingLT(pieceLoc);
@@ -12,6 +14,37 @@ void MoveGenerator::init()
         initPawnLT(SIDE_BLACK, pieceLoc);
         initPawnLT(SIDE_WHITE, pieceLoc);
         //mQueenLookupTable[pieceLoc] = computePseudoRookMoves(pieceLoc, 0, 0) | computePseudoBishopMoves(pieceLoc, 0, 0);
+    }
+}
+
+void MoveGenerator::initRays()
+{
+    for (int fromSquare = 0; fromSquare < 64; fromSquare++)
+    {
+        for (int dir = 0; dir < NUM_DIRECTIONS; dir++)
+            mRays[dir][fromSquare] = 0;
+
+        // cardinal directions
+        for (int square = fromSquare + 8; square <= 63; square += 8)
+            mRays[DIR_NORTH][fromSquare] |= BB::boardSquares[square];
+        for (int square = fromSquare - 8; square >= 0; square -= 8)
+            mRays[DIR_SOUTH][fromSquare] |= BB::boardSquares[square];
+
+        // this remainder math is so that the moves stay in the same rank. compare the numbers to https://www.chessprogramming.org/Square_Mapping_Considerations
+        for (int square = fromSquare + 1; (square + 1) % 8 != 1 && square <= 63; square++)
+            mRays[DIR_EAST][fromSquare] |= BB::boardSquares[square];
+        for (int square = fromSquare - 1; (square - 1) % 8 != 6 && square >= 0; square--)
+            mRays[DIR_WEST][fromSquare] |= BB::boardSquares[square];
+
+        // ordinal directions
+        for (int square = fromSquare + 7; square <= 63 && (square - 1) % 8 != 6; square += 7)
+            mRays[DIR_NORTHWEST][fromSquare] |= BB::boardSquares[square];
+        for (int square = fromSquare + 9; square <= 63 && (square + 1) % 8 != 1; square += 9)
+            mRays[DIR_NORTHEAST][fromSquare] |= BB::boardSquares[square];
+        for (int square = fromSquare - 7; square >= 0 && (square + 1) % 8 != 1; square -= 7)
+            mRays[DIR_SOUTHWEST][fromSquare] |= BB::boardSquares[square];
+        for (int square = fromSquare - 9; square >= 0 && (square - 1) % 8 != 6; square -= 9)
+            mRays[DIR_SOUTHEAST][fromSquare] |= BB::boardSquares[square];
     }
 }
 
@@ -54,34 +87,34 @@ void MoveGenerator::initPawnLT(Colour side, Byte pawnLoc)
         pawnAttackLookupTable[SIDE_BLACK][pawnLoc] = pawnAFileClearedBB >> 9 | pawnHFileClearedBB >> 7;
 }
 
-Bitboard MoveGenerator::computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPiecesBB)
+Bitboard MoveGenerator::computePseudoKingMoves(Byte fromSquare, Bitboard friendlyPiecesBB)
 {
 	// we already have predefined moves for the king so we need only index the correct element of the lookup table
 	// then we simply ensure that we aren't allowing moves onto friendly pieces
-	return kingLookupTable[pieceCoord] & ~friendlyPiecesBB;
+	return kingLookupTable[fromSquare] & ~friendlyPiecesBB;
 }
 
-Bitboard MoveGenerator::computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPiecesBB)
+Bitboard MoveGenerator::computePseudoKnightMoves(Byte fromSquare, Bitboard friendlyPiecesBB)
 {
 	// same process as above :D
-    return knightLookupTable[pieceCoord] & ~friendlyPiecesBB;
+    return knightLookupTable[fromSquare] & ~friendlyPiecesBB;
 }
 
-Bitboard MoveGenerator::computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPiecesBB, Bitboard emptyBB, Bitboard enPassantBB)
+Bitboard MoveGenerator::computePseudoPawnMoves(Byte fromSquare, Colour side, Bitboard enemyPiecesBB, Bitboard emptyBB, Bitboard enPassantBB)
 {
 	// if it's white we need to mask ranks to see if it has permissions to move two squares ahead
-	Bitboard movesBB = (pawnAttackLookupTable[side][pieceCoord] & enemyPiecesBB) | (pawnAttackLookupTable[side][pieceCoord] & enPassantBB);
+	Bitboard movesBB = (pawnAttackLookupTable[side][fromSquare] & enemyPiecesBB) | (pawnAttackLookupTable[side][fromSquare] & enPassantBB);
 
 	if (side == SIDE_WHITE)
 	{
-		Bitboard oneStepBB = (BB::boardSquares[pieceCoord] << 8) & emptyBB;
+		Bitboard oneStepBB = (BB::boardSquares[fromSquare] << 8) & emptyBB;
 		// if the twostep is on the fourth rank, it would mean the pawn was on its home row
 		Bitboard twoStepBB = ((oneStepBB << 8) & ~BB::rankClear[BB::RANK_FOURTH]) & emptyBB;
 		movesBB |= oneStepBB | twoStepBB;
 	}
 	else if (side == SIDE_BLACK)
 	{
-		Bitboard oneStepBB = (BB::boardSquares[pieceCoord] >> 8) & emptyBB;
+		Bitboard oneStepBB = (BB::boardSquares[fromSquare] >> 8) & emptyBB;
 		// if the twostep is on the fifth rank, it would mean the pawn was on its home row
 		Bitboard twoStepBB = ((oneStepBB >> 8) & ~BB::rankClear[BB::RANK_FIFTH]) & emptyBB;
 		movesBB |= oneStepBB | twoStepBB;
@@ -104,54 +137,81 @@ inline bool slidingPieceMoveStep(int square, Bitboard* movesBB, Bitboard enemyPi
     return false;
 }
 
-Bitboard MoveGenerator::computePseudoRookMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB)
+// Uses the classical approach to calculate rook moves. see more here: https://www.chessprogramming.org/Classical_Approach
+Bitboard MoveGenerator::computePseudoRookMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB)
 {
+    // we have it include enemy and friendly pieces, then at the end we xor any friends pieces out?
+    // the operations below temporarily include friendly pieces in the movesBB. these are removed at the end
+
+    if (fromSquare > 64)
+        return 0;
+
+    Bitboard movesBB = 0;
+    
+    Bitboard currentMoves = mRays[DIR_NORTH][fromSquare];
+    Bitboard blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_NORTH][BB::getLSB(blockers)];
+    movesBB |= currentMoves;
+
+    currentMoves = mRays[DIR_SOUTH][fromSquare];
+    blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_SOUTH][BB::getMSB(blockers)];
+    movesBB |= currentMoves;
+
+    currentMoves = mRays[DIR_WEST][fromSquare];
+    blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_WEST][BB::getMSB(blockers)];
+    movesBB |= currentMoves;
+
+    currentMoves = mRays[DIR_EAST][fromSquare];
+    blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_EAST][BB::getLSB(blockers)];
+    movesBB |= currentMoves;
+
+    return movesBB & ~friendlyPiecesBB;
+}
+
+Bitboard MoveGenerator::computePseudoBishopMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB)
+{
+    if (fromSquare > 64)
+        return 0;
+
     Bitboard movesBB = 0;
 
-    // see if it works first, then clean it up. also move the entire side moves into movegenerator and out of board
-    // cannot move to the edges of the board
-    for (int square = pieceCoord + 8; square <= 63; square += 8) // north
-        if (slidingPieceMoveStep(square, &movesBB, enemyPiecesBB, friendlyPiecesBB))
-            break;
-    for (int square = pieceCoord - 8; square >= 0; square -= 8) // south
-        if (slidingPieceMoveStep(square, &movesBB, enemyPiecesBB, friendlyPiecesBB))
-            break;
-    // this remainder math is so that the moves stay in the same rank. compare the numbers to https://www.chessprogramming.org/Square_Mapping_Considerations
-    for (int square = pieceCoord + 1; (square + 1) % 8 != 1 && square <= 63; square++) // east
-        if (slidingPieceMoveStep(square, &movesBB, enemyPiecesBB, friendlyPiecesBB))
-            break;
+    Bitboard currentMoves = mRays[DIR_NORTHEAST][fromSquare];
+    Bitboard blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_NORTHEAST][BB::getLSB(blockers)];
+    movesBB |= currentMoves;
 
-    for (int square = pieceCoord - 1; (square - 1) % 8 != 6 && square >= 0; square--) // west right cause this works UNLESS its on the bottom rank right ?
-        if (slidingPieceMoveStep(square, &movesBB, enemyPiecesBB, friendlyPiecesBB))
-            break;
+    currentMoves = mRays[DIR_NORTHWEST][fromSquare];
+    blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_NORTHWEST][BB::getLSB(blockers)];
+    movesBB |= currentMoves;
 
-    return movesBB;
+    currentMoves = mRays[DIR_SOUTHEAST][fromSquare];
+    blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_SOUTHEAST][BB::getMSB(blockers)];
+    movesBB |= currentMoves;
+
+    currentMoves = mRays[DIR_SOUTHWEST][fromSquare];
+    blockers = currentMoves & occupiedBB;
+    if (blockers)
+        currentMoves ^= mRays[DIR_SOUTHWEST][BB::getMSB(blockers)];
+    movesBB |= currentMoves;
+
+    return movesBB & ~friendlyPiecesBB;
 }
 
-Bitboard MoveGenerator::computePseudoBishopMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB)
+Bitboard MoveGenerator::computePseudoQueenMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB)
 {
-    Bitboard moves = 0;
-    int test = pieceCoord + 7;
-
-    for (int square = pieceCoord + 7; square <= 63 && (square - 1) % 8 != 6; square += 7)
-        if (slidingPieceMoveStep(square, &moves, enemyPiecesBB, friendlyPiecesBB))
-            break;
-    for (int square = pieceCoord + 9; square <= 63 && (square + 1) % 8 != 1; square += 9)
-        if (slidingPieceMoveStep(square, &moves, enemyPiecesBB, friendlyPiecesBB))
-            break;
-    for (int square = pieceCoord - 7; square >= 0 && (square + 1) % 8 != 1; square -= 7)
-        if (slidingPieceMoveStep(square, &moves, enemyPiecesBB, friendlyPiecesBB))
-            break;
-    for (int square = pieceCoord - 9; square >= 0 && (square - 1) % 8 != 6; square -= 9)
-        if (slidingPieceMoveStep(square, &moves, enemyPiecesBB, friendlyPiecesBB))
-            break;
-
-    return moves;
-}
-
-Bitboard MoveGenerator::computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB)
-{
-    return computePseudoBishopMoves(pieceCoord, enemyPiecesBB, friendlyPiecesBB) | computePseudoRookMoves(pieceCoord, enemyPiecesBB, friendlyPiecesBB);
+    return computePseudoBishopMoves(fromSquare, occupiedBB, friendlyPiecesBB) | computePseudoRookMoves(fromSquare, occupiedBB, friendlyPiecesBB);
 }
 
 void MoveGenerator::setCastleMovePrivilegesRevoked(Colour side, Byte privileges, Byte* privilegesToBeRevoked)
@@ -400,15 +460,15 @@ Bitboard MoveGenerator::calculatePsuedoMove(Board* board, MoveData* md, Bitboard
         return computePseudoPawnMoves(md->originSquare, md->side, *md->capturedColourBB, board->currentPosition.emptyBB, BB::boardSquares[board->currentPosition.enPassantSquare]);
 
     else if ((pieceBB & board->currentPosition.whiteBishopsBB) || (pieceBB & board->currentPosition.blackBishopsBB))
-        return computePseudoBishopMoves(md->originSquare, *md->capturedColourBB, *md->colourBB);
+        return computePseudoBishopMoves(md->originSquare, board->currentPosition.occupiedBB, *md->colourBB);
 
     else if ((pieceBB & board->currentPosition.whiteQueensBB) || (pieceBB & board->currentPosition.blackQueensBB))
-        return computePseudoQueenMoves(md->originSquare, *md->capturedColourBB, *md->colourBB);
+        return computePseudoQueenMoves(md->originSquare, board->currentPosition.occupiedBB, *md->colourBB);
 
     else if ((pieceBB & board->currentPosition.whiteRooksBB) || (pieceBB & board->currentPosition.blackRooksBB)) // these moves may change castling privileges
     {
         setCastlePrivileges(board, md, false);
-        return computePseudoRookMoves(md->originSquare, *md->capturedColourBB, *md->colourBB);
+        return computePseudoRookMoves(md->originSquare, board->currentPosition.occupiedBB, *md->colourBB);
     }
 
     else if ((pieceBB & board->currentPosition.whiteKingBB) || (pieceBB & board->currentPosition.blackKingBB)) // these moves may change castling privileges

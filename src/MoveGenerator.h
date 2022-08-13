@@ -10,6 +10,23 @@ class Board;
 class MoveGenerator
 {
 private:
+    enum Directions
+    {
+        DIR_NORTH,
+        DIR_SOUTH,
+        DIR_EAST,
+        DIR_WEST,
+        DIR_NORTHEAST,
+        DIR_NORTHWEST,
+        DIR_SOUTHEAST,
+        DIR_SOUTHWEST,
+        NUM_DIRECTIONS,
+    };
+
+    Bitboard mRays[NUM_DIRECTIONS][64];
+    void initRays();
+
+    // initialize nonsliding piece lookup tables
     void initKnightLT(Byte knightLoc);
     void initKingLT(Byte kingLoc);
     void initPawnLT(Colour side, Byte pawnLoc);
@@ -34,12 +51,12 @@ public:
     void init();
 
     // pseudo meaning that they do not account for if they result in a check!
-    Bitboard computePseudoKingMoves(Byte pieceCoord, Bitboard friendlyPiecesBB);
-    Bitboard computePseudoKnightMoves(Byte pieceCoord, Bitboard friendlyPiecesBB);
-    Bitboard computePseudoPawnMoves(Byte pieceCoord, Colour side, Bitboard enemyPiecesBB, Bitboard occupiedSquaresBB, Bitboard enPassantBB);
-    Bitboard computePseudoRookMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB);
-    Bitboard computePseudoBishopMoves(Byte pieceCoord, Bitboard enemyPiecesBB, Bitboard friendlyPiecesBB);
-    Bitboard computePseudoQueenMoves(Byte pieceCoord, Bitboard enemyPieceBB, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoKingMoves(Byte fromSquare, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoKnightMoves(Byte fromSquare, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoPawnMoves(Byte fromSquare, Colour side, Bitboard enemyPiecesBB, Bitboard occupiedSquaresBB, Bitboard enPassantBB);
+    Bitboard computePseudoRookMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoBishopMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB);
+    Bitboard computePseudoQueenMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB);
 
     void calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec, bool captureOnly);
     MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, CastlingPrivilege castleType);

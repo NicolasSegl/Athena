@@ -61,4 +61,6 @@ namespace BB
 
     void initialize();
     void printBitboard(Bitboard bitboard);
+	int getLSB(Bitboard bb); // get least significant bit
+	int getMSB(Bitboard bb); // get most significant bit
 }

@@ -50,7 +50,7 @@ MoveData Athena::search(Board* board, float timeToMove)
 std::string Athena::getOpeningBookMove(Board* board, const std::vector<std::string>& lanStringHistory)
 {
     std::ifstream bookFile;
-    bookFile.open("book.txt");
+    bookFile.open("engines/book.txt");
 
     // search through the whole file and pick the move that has the longest opening sequence
     std::string openingLine;

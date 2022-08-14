@@ -1,5 +1,4 @@
-#ifndef MoveData_hpp
-#define MoveData_hpp
+#pragma once
 
 #include "Constants.h"
 
@@ -65,5 +64,3 @@ struct MoveData
                castlePrivilegesRevoked == rightMD.castlePrivilegesRevoked && moveType == rightMD.moveType;
     }
 };
-
-#endif /* MoveData_hpp */

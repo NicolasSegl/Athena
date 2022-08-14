@@ -1,8 +1,8 @@
-#include "ChessGame.h"
-#include "UCI.h"
-
 #include <random>
 #include <time.h>
+
+#include "ChessGame.h"
+#include "UCI.h"
 
 // I LOVE YOU CHARLOTTE <3 I LOVE YOU MORE!!!!
 

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "Bitboard.h"
-#include "MoveGenerator.h"
-#include "MoveData.h"
 #include "ChessPosition.h"
+#include "MoveData.h"
+#include "MoveGenerator.h"
 #include "ZobristKeyGenerator.h"
 
 class Board

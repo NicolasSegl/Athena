@@ -1,9 +1,8 @@
-#include "UCI.h"
-#include "Constants.h"
-
 #include <iostream>
 #include <sstream>
 
+#include "Constants.h"
+#include "UCI.h"
 #include "utils.h"
 
 // response to "uci" command

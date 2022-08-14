@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
+#include "Athena.h"
 #include "Bitboard.h"
 #include "Board.h"
 #include "MoveData.h"
-#include "Athena.h"
 
 // maybe abstract this into more classes after it starts working
 class ChessGame

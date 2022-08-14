@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ChessGame.h"
-
 #include <string>
 #include <vector>
+
+#include "ChessGame.h"
 
 class UCI
 {

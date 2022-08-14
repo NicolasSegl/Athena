@@ -1,11 +1,11 @@
+#include <cmath>
+#include <iostream>
+#include <random>
+
 #include "Board.h"
 #include "MoveGenerator.h"
 #include "Outcomes.h"
 #include "utils.h"
-
-#include <iostream>
-#include <cmath>
-#include <random>
 
 // sets appropriate bits on white/black pieces bitboards and occupied/empty bitboards
 void Board::setAuxillaryBitboards()

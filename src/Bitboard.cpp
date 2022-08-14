@@ -1,7 +1,7 @@
-#include "Bitboard.h"
-
 #include <assert.h>
 #include <iostream>
+
+#include "Bitboard.h"
 
 namespace BB
 {

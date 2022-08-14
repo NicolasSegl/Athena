@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ZobristKeyGenerator.h"
 #include "MoveData.h"
+#include "ZobristKeyGenerator.h"
 
 struct TranspositionHashEntry
 {

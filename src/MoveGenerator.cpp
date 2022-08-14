@@ -1,7 +1,7 @@
-#include "MoveGenerator.h"
-#include "Board.h"
-
 #include <iostream>
+
+#include "Board.h"
+#include "MoveGenerator.h"
 
 void MoveGenerator::init()
 {

@@ -1,13 +1,13 @@
-#include "Athena.h"
-#include "Outcomes.h"
-#include "SquarePieceTables.h"
-#include "utils.h"
-
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
 #include <limits>
+
+#include "Athena.h"
+#include "Outcomes.h"
+#include "SquarePieceTables.h"
+#include "utils.h"
 
 const int INF = std::numeric_limits<int>::max();
 

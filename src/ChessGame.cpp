@@ -1,7 +1,7 @@
+#include <iostream>
+
 #include "ChessGame.h"
 #include "Outcomes.h"
-
-#include <iostream>
 
 void ChessGame::init()
 {

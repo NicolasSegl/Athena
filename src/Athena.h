@@ -1,13 +1,13 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "Bitboard.h"
-#include "MoveData.h"
 #include "Board.h"
-#include "TranspositionHashEntry.h"
 #include "Constants.h"
+#include "MoveData.h"
+#include "TranspositionHashEntry.h"
 
 class Athena
 {

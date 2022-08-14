@@ -1,6 +1,6 @@
-#include "utils.h"
-
 #include <sstream>
+
+#include "utils.h"
 
 void splitString(const std::string& string, std::vector<std::string>& vec, char toSplitCharacter)
 {

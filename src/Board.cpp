@@ -157,7 +157,8 @@ bool Board::makeMoveLAN(const std::string& lanString)
 
 	std::vector<MoveData> moveVec;
 	mMoveGenerator.calculatePieceMoves(this, currentPosition.sideToMove, moveOriginSquare, moveVec, false);
-	mMoveGenerator.calculateCastleMoves(this, currentPosition.sideToMove, moveVec);
+	if (from == "e1" || from == "e8")
+		mMoveGenerator.calculateCastleMoves(this, currentPosition.sideToMove, moveVec);
 
 	for (int i = 0; i < moveVec.size(); i++)
 		// compare the origin/target squares of the move provided with the origin/target squares of the possible moves at that square (plus potential castle moves)
@@ -196,8 +197,6 @@ void Board::init()
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
 	mPly = 0; // so that the initial position inserted into the zobirst key history has an index of 0
 	insertMoveIntoHistory(mPly++);
-	currentPosition.castlePrivileges = (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE | (Byte)CastlingPrivilege::WHITE_LONG_CASTLE |
-									   (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE | (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
 }
 
 // calls MoveGenerator to calculate all possible moves for the given side (putting them in a reference vector of Board::whiteMoves or board::blackMoves)
@@ -384,6 +383,81 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
     return false;
 }
 
+// using the same methods as Board::squareAttacked(), this function returns the value of the least valuable piece attacking the square as well as its piece bitboard
+// it is ordered differently, however, as to make sure the least valuable attackers are considered first
+void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard* pieceBB)
+{
+	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
+
+	// this gets all of the diagonal attacks of the pawns depending on the side attacking. by clearing the A and H files,
+	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
+	if (attackingSide == SIDE_WHITE)
+	{
+		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)))
+		{
+			*pieceValue = 1;
+			pieceBB = &currentPosition.whitePawnsBB;
+			return;
+		}
+	}
+	else
+	{
+		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 9)))
+		{
+			*pieceValue = 1;
+			pieceBB = &currentPosition.blackPawnsBB;
+			return;
+		}
+	}
+
+	Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKnightsBB : currentPosition.blackKnightsBB;
+	if (mMoveGenerator.knightLookupTable[square] & opKnightsBB)
+	{
+		*pieceValue = 3;
+		pieceBB = &opKnightsBB;
+		return;
+	}
+
+	Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? currentPosition.blackPiecesBB : currentPosition.whitePiecesBB;
+
+	Bitboard opBishopsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteBishopsBB : currentPosition.blackBishopsBB;
+	Bitboard bishopMovesBB = mMoveGenerator.computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces);
+	if (bishopMovesBB & opBishopsBB)
+	{
+		*pieceValue = 3;
+		pieceBB = &opBishopsBB;
+		return;
+	}
+
+	Bitboard opRooks = attackingSide == SIDE_WHITE ? currentPosition.whiteRooksBB : currentPosition.blackRooksBB;
+	Bitboard rookMovesBB = mMoveGenerator.computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces);
+	if (rookMovesBB & opRooks)
+	{
+		*pieceValue = 5;
+		pieceBB = &opRooks;
+		return;
+	}
+
+	Bitboard opQueens = attackingSide == SIDE_WHITE ? currentPosition.whiteQueensBB : currentPosition.blackQueensBB;
+	if ((rookMovesBB | bishopMovesBB) & opQueens)
+	{
+		*pieceValue = 9;
+		pieceBB = &opQueens;
+		return;
+	}
+
+	Bitboard opKingsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB;
+	if (mMoveGenerator.kingLookupTable[square] & opKingsBB)
+	{
+		*pieceValue = 99;
+		pieceBB = &opKingsBB;
+		return;
+	}
+
+	// if no piece was found
+	pieceBB = nullptr;
+}
+
 // if the move made generated an en passant square, set the current en passant square for the current position
 void Board::setEnPassantSquares(MoveData* moveData)
 {
@@ -425,7 +499,7 @@ bool Board::makeMove(MoveData* moveData)
 
 		Byte kingSquare = computeKingSquare(moveData->side == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB);
 
-		if (squareAttacked(kingSquare, !moveData->side))
+		if (squareAttacked(kingSquare, !moveData->side) || kingSquare == 255) // kingSquare == 255 means that there is no king on the board
 		{
 			// passing in false so that we do not update the zobrist key/history, as we never actually added it here
 			// this means that otherwise it would be removing the previous zobrist key, eventually giving negative 

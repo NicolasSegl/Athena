@@ -232,7 +232,7 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
 {
     MoveData md;
     md.side = side;
-    md.setMoveType(MoveData::EncodingBits::NONE);
+    md.setMoveType(MoveData::EncodingBits::REGULAR);
     int lower, higher;
 
     switch (castleType)

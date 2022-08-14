@@ -1,7 +1,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "Constants.h"
 #include "UCI.h"
 #include "utils.h"
 
@@ -34,7 +33,7 @@ void UCI::respondPosition(const std::vector<std::string>& commandVec)
 	int movesCommandIndex = 3;
 
 	if (commandVec[1] == "startpos") // index of 1 is the start of the FEN string
-		mCG.setPositionFEN(FEN::start);
+		mCG.setPositionFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	else
 	{
 		std::string fenString = "";

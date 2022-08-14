@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Constants.h"
+#include "DataTypes.h"
 
 enum class CastlingPrivilege
 {

@@ -7,6 +7,25 @@
 #include "Outcomes.h"
 #include "utils.h"
 
+namespace FenDataFields
+{
+	enum FEN_FIELDS
+	{
+		PIECE_PLACEMENT,
+		SIDE_TO_PLAY,
+		CASTLE_PRIVILEGES,
+		EN_PASSANT_SQUARE,
+		FIFTY_MOVE_COUNTER,
+		NUM_FULL_MOVES,
+	};
+}
+
+namespace ASCII
+{
+	const int NUMBER_ONE_CODE = 49;
+	const int LETTER_A_CODE = 97;
+}
+
 // sets appropriate bits on white/black pieces bitboards and occupied/empty bitboards
 void Board::setAuxillaryBitboards()
 {
@@ -93,7 +112,7 @@ void Board::setPositionFEN(const std::string& fenString)
 	splitString(fenString, dataVec, ' ');
 
 	// set side to move and adjust current ply (using the total number of full moves at the end of the FEN data)
-	if (dataVec[FEN::Fields::sideToPlay][0] == 'w')
+	if (dataVec[FenDataFields::SIDE_TO_PLAY][0] == 'w')
 	{
 		mPly = -1; // so that when we add 2 times the number of full moves, we get the proper ply if the side to move is white
 		currentPosition.sideToMove = SIDE_WHITE;
@@ -102,23 +121,23 @@ void Board::setPositionFEN(const std::string& fenString)
 		currentPosition.sideToMove = SIDE_BLACK;
 
 	// set castle privileges 
-	for (int character = 0; character < dataVec[FEN::Fields::castlePrivileges].size(); character++)
+	for (int character = 0; character < dataVec[FenDataFields::CASTLE_PRIVILEGES].size(); character++)
 	{
-		if		(dataVec[FEN::Fields::castlePrivileges][character] == 'k') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
-		else if (dataVec[FEN::Fields::castlePrivileges][character] == 'q') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
-		else if (dataVec[FEN::Fields::castlePrivileges][character] == 'K') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
-		else if (dataVec[FEN::Fields::castlePrivileges][character] == 'Q') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
+		if		(dataVec[FenDataFields::CASTLE_PRIVILEGES][character] == 'k') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
+		else if (dataVec[FenDataFields::CASTLE_PRIVILEGES][character] == 'q') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
+		else if (dataVec[FenDataFields::CASTLE_PRIVILEGES][character] == 'K') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
+		else if (dataVec[FenDataFields::CASTLE_PRIVILEGES][character] == 'Q') currentPosition.castlePrivileges |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
 	}
 
 	// set en passant square
-	if (dataVec[FEN::Fields::enPassantSquare] != "-") 
-		currentPosition.enPassantSquare = getSquareNumberCoordinate(dataVec[FEN::Fields::enPassantSquare]);
+	if (dataVec[FenDataFields::EN_PASSANT_SQUARE] != "-")
+		currentPosition.enPassantSquare = getSquareNumberCoordinate(dataVec[FenDataFields::EN_PASSANT_SQUARE]);
 
 	// set the number of moves
-	currentPosition.fiftyMoveCounter = std::stoi(dataVec[FEN::Fields::fiftyMoveCounter]);
+	currentPosition.fiftyMoveCounter = std::stoi(dataVec[FenDataFields::FIFTY_MOVE_COUNTER]);
 
 	// set the current ply
-	mPly += 2 * std::stoi(dataVec[FEN::Fields::numFullMoves]);
+	mPly += 2 * std::stoi(dataVec[FenDataFields::NUM_FULL_MOVES]);
 
 	insertMoveIntoHistory(mPly--);
 

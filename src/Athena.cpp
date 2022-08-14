@@ -9,22 +9,41 @@
 #include "SquarePieceTables.h"
 #include "utils.h"
 
+namespace Evaluation
+{
+    // values of the pieces relative to centipawns (1 pawn is worth 100 centipawns)
+    const int KING_VALUE = 20000;
+    const int QUEEN_VALUE = 900;
+    const int ROOK_VALUE = 500;
+    const int BISHOP_VALUE = 330;
+    const int KNIGHT_VALUE = 320;
+    const int PAWN_VALUE = 100;
+
+    const int CHECKMATE_VALUE = 1000000;
+}
+
 const int INF = std::numeric_limits<int>::max();
 
-// values of the pieces relative to centipawns (1 pawn is worth 100 centipawns)
-const int KING_VALUE = 20000;
-const int QUEEN_VALUE = 900;
-const int ROOK_VALUE = 500;
-const int BISHOP_VALUE = 330;
-const int KNIGHT_VALUE = 320;
-const int PAWN_VALUE = 100;
+// move ordering constants
+const int MVV_LVA_OFFSET = 100;
+const int KILLER_MOVE_SCORE = 10;
+const int MAX_KILLER_MOVES = 2;
 
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
     mDepth = 6;
+    mMaxPly = 15;
     mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
     clearTranspositionTable();
+
+    mKillerMoves = new MoveData*[mMaxPly];
+    for (int i = 0; i < mMaxPly; i++)
+    {
+        mKillerMoves[i] = new MoveData[MAX_KILLER_MOVES];
+        for (int j = 0; j < 2; j++)
+            mKillerMoves[i][j] = {};
+    }
 }
 
 // sets all the values in the transposition table to null (so we know that no data has yet been found at a given index)
@@ -131,23 +150,23 @@ int Athena::evaluatePosition(Board* board, float midgameValue)
         // consider piece value and piece square table
         if (BB::boardSquares[square] & board->currentPosition.whitePawnsBB)
         {
-            whiteEval += PAWN_VALUE + pst::pawnTable[63 - square];
+            whiteEval += Evaluation::PAWN_VALUE + pst::pawnTable[63 - square];
         }
-        else if (BB::boardSquares[square] & board->currentPosition.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
-        else if (BB::boardSquares[square] & board->currentPosition.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
-        else if (BB::boardSquares[square] & board->currentPosition.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square];
-        else if (BB::boardSquares[square] & board->currentPosition.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteKnightsBB) whiteEval += Evaluation::KNIGHT_VALUE + pst::knightTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteBishopsBB) whiteEval += Evaluation::BISHOP_VALUE + pst::bishopTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteRooksBB)   whiteEval += Evaluation::ROOK_VALUE + pst::rookTable[63 - square];
+        else if (BB::boardSquares[square] & board->currentPosition.whiteQueensBB)  whiteEval += Evaluation::QUEEN_VALUE + pst::queenTable[63 - square];
         else if (BB::boardSquares[square] & board->currentPosition.whiteKingBB)
             // so a pawn hash table is just a transposition table but for pawn structures??
-            whiteEval += KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
+            whiteEval += Evaluation::KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
 
-        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)   blackEval += PAWN_VALUE + pst::pawnTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)   blackEval += Evaluation::PAWN_VALUE + pst::pawnTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += Evaluation::KNIGHT_VALUE + pst::knightTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += Evaluation::BISHOP_VALUE + pst::bishopTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += Evaluation::ROOK_VALUE + pst::rookTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackQueensBB)  blackEval += Evaluation::QUEEN_VALUE + pst::queenTable[square];
         else if (BB::boardSquares[square] & board->currentPosition.blackKingBB)
-            blackEval += KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
+            blackEval += Evaluation::KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
     }
     
     return whiteEval - blackEval;
@@ -168,13 +187,13 @@ void Athena::assignMoveScores(Board* board, std::vector<MoveData>& moves, Byte p
     for (int i = 0; i < moves.size(); i++)
     {
         if (moves[i].capturedPieceBB) // move is violent
-            moves[i].moveScore += AthenaConstants::MVV_LVA_OFFSET + MVV_LVATable[getPieceType(board, moves[i].capturedPieceBB)]
-                                                                              [getPieceType(board, moves[i].pieceBB)];
+            moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[getPieceType(board, moves[i].capturedPieceBB)]
+                                                               [getPieceType(board, moves[i].pieceBB)];
         else // move is quiet
-            for (int j = 0; j < AthenaConstants::MAX_KILLER_MOVES; j++)
+            for (int j = 0; j < MAX_KILLER_MOVES; j++)
                 if (moves[i] == mKillerMoves[ply][j])
                 {
-                    moves[i].moveScore += AthenaConstants::MVV_LVA_OFFSET - AthenaConstants::KILLER_MOVE_SCORE;
+                    moves[i].moveScore += MVV_LVA_OFFSET - KILLER_MOVE_SCORE;
                     break;
                 }
     }
@@ -186,21 +205,21 @@ void Athena::insertKillerMove(MoveData& move, Byte ply)
         return;
     else
     {
-        for (int i = 1; i < AthenaConstants::MAX_KILLER_MOVES; i++)
+        for (int i = 1; i < MAX_KILLER_MOVES; i++)
             mKillerMoves[ply][i] = mKillerMoves[ply][i - 1];
 
         mKillerMoves[ply][0] = move;
     }
 }
 
-PieceTypes::Types Athena::getPieceType(Board* board, Bitboard* pieceBB)
+Athena::PieceTypes Athena::getPieceType(Board* board, Bitboard* pieceBB)
 {
-    if      (pieceBB == &board->currentPosition.whitePawnsBB   || pieceBB == &board->currentPosition.blackPawnsBB)   return PieceTypes::PAWN;
-    else if (pieceBB == &board->currentPosition.whiteKnightsBB || pieceBB == &board->currentPosition.blackKnightsBB) return PieceTypes::KNIGHT;
-    else if (pieceBB == &board->currentPosition.whiteBishopsBB || pieceBB == &board->currentPosition.blackBishopsBB) return PieceTypes::BISHOP;
-    else if (pieceBB == &board->currentPosition.whiteRooksBB   || pieceBB == &board->currentPosition.blackRooksBB)   return PieceTypes::ROOK;
-    else if (pieceBB == &board->currentPosition.whiteQueensBB  || pieceBB == &board->currentPosition.blackQueensBB)  return PieceTypes::QUEEN;
-    else return PieceTypes::KING;
+    if      (pieceBB == &board->currentPosition.whitePawnsBB   || pieceBB == &board->currentPosition.blackPawnsBB)   return PIECE_TYPE_PAWN;
+    else if (pieceBB == &board->currentPosition.whiteKnightsBB || pieceBB == &board->currentPosition.blackKnightsBB) return PIECE_TYPE_KNIGHT;
+    else if (pieceBB == &board->currentPosition.whiteBishopsBB || pieceBB == &board->currentPosition.blackBishopsBB) return PIECE_TYPE_BISHOP;
+    else if (pieceBB == &board->currentPosition.whiteRooksBB   || pieceBB == &board->currentPosition.blackRooksBB)   return PIECE_TYPE_ROOK;
+    else if (pieceBB == &board->currentPosition.whiteQueensBB  || pieceBB == &board->currentPosition.blackQueensBB)  return PIECE_TYPE_QUEEN;
+    else return PIECE_TYPE_KING;
 }
 
 int Athena::calculateExtension(Board* board, Colour side, Byte kingSquare)
@@ -242,22 +261,22 @@ void Athena::insertTranspositionEntry(TranspositionHashEntry* hashEntry, int max
     mTranspositionTable[hashEntry->zobristKey % mTranspositionTableSize] = *hashEntry;
 }
 
-int Athena::getPieceValue(PieceTypes::Types pieceType)
+int Athena::getPieceValue(PieceTypes pieceType)
 {
     switch (pieceType)
     {
-        case PieceTypes::KING:
-            return KING_VALUE;
-        case PieceTypes::QUEEN:
-            return QUEEN_VALUE;
-        case PieceTypes::ROOK:
-            return ROOK_VALUE;
-        case PieceTypes::BISHOP:
-            return BISHOP_VALUE;
-        case PieceTypes::KNIGHT:
-            return KNIGHT_VALUE;
-        case PieceTypes::PAWN:
-            return PAWN_VALUE;
+        case PIECE_TYPE_KING:
+            return Evaluation::KING_VALUE;
+        case PIECE_TYPE_QUEEN:
+            return Evaluation::QUEEN_VALUE;
+        case PIECE_TYPE_ROOK:
+            return Evaluation::ROOK_VALUE;
+        case PIECE_TYPE_BISHOP:
+            return Evaluation::BISHOP_VALUE;
+        case PIECE_TYPE_KNIGHT:
+            return Evaluation::KNIGHT_VALUE;
+        case PIECE_TYPE_PAWN:
+            return Evaluation::PAWN_VALUE;
         default:
             return 0;
     }
@@ -279,7 +298,7 @@ int Athena::quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte
     if (alpha >= beta)
         return beta;
 
-    if (ply >= AthenaConstants::MAX_PLY)
+    if (ply >= mMaxPly)
         return alpha;
 
     board->calculateSideMovesCapturesOnly(side);
@@ -375,7 +394,7 @@ int Athena::negamax(Board* board, int depth, Colour side, int alpha, int beta, B
     {
         Byte kingSquare = board->computeKingSquare(side == SIDE_WHITE ? board->currentPosition.whiteKingBB : board->currentPosition.blackKingBB);
         if (board->squareAttacked(kingSquare, !side)) // checkmate (no legal moves and king is in check)
-            return -Evaluation::CHECKMATE_SCORE * depth;
+            return -Evaluation::CHECKMATE_VALUE * depth;
         else
             return 0; // stalemate (no legal moves and king is not in check)
     }

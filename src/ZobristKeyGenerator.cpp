@@ -1,7 +1,24 @@
 #include <random>
 
-#include "Constants.h"
+#include "DataTypes.h"
 #include "ZobristKeyGenerator.h"
+
+enum ColourAndPieceTypes
+{
+	WHITE_PAWN,
+	WHITE_ROOK,
+	WHITE_BISHOP,
+	WHITE_QUEEN,
+	WHITE_KNIGHT,
+	WHITE_KING,
+
+	BLACK_PAWN,
+	BLACK_ROOK,
+	BLACK_BISHOP,
+	BLACK_QUEEN,
+	BLACK_KNIGHT,
+	BLACK_KING,
+};
 
 uint64_t ZobristKeyGenerator::getRandom64()
 {
@@ -28,21 +45,21 @@ uint64_t ZobristKeyGenerator::getPieceHashKeyForGeneration(ChessPosition* chessP
 {
 	if (BB::boardSquares[square] & chessPosition->whitePiecesBB)
 	{
-		if	    (BB::boardSquares[square] & chessPosition->whitePawnsBB)   return mPieceHashKeys[PieceTypes::WHITE_PAWN][square];
-		else if (BB::boardSquares[square] & chessPosition->whiteRooksBB)   return mPieceHashKeys[PieceTypes::WHITE_ROOK][square];
-		else if (BB::boardSquares[square] & chessPosition->whiteBishopsBB) return mPieceHashKeys[PieceTypes::WHITE_BISHOP][square];
-		else if (BB::boardSquares[square] & chessPosition->whiteQueensBB)  return mPieceHashKeys[PieceTypes::WHITE_QUEEN][square];
-		else if (BB::boardSquares[square] & chessPosition->whiteKnightsBB) return mPieceHashKeys[PieceTypes::WHITE_KNIGHT][square];
-		else if (BB::boardSquares[square] & chessPosition->whiteKingBB)	   return mPieceHashKeys[PieceTypes::WHITE_KING][square];
+		if	    (BB::boardSquares[square] & chessPosition->whitePawnsBB)   return mPieceHashKeys[WHITE_PAWN][square];
+		else if (BB::boardSquares[square] & chessPosition->whiteRooksBB)   return mPieceHashKeys[WHITE_ROOK][square];
+		else if (BB::boardSquares[square] & chessPosition->whiteBishopsBB) return mPieceHashKeys[WHITE_BISHOP][square];
+		else if (BB::boardSquares[square] & chessPosition->whiteQueensBB)  return mPieceHashKeys[WHITE_QUEEN][square];
+		else if (BB::boardSquares[square] & chessPosition->whiteKnightsBB) return mPieceHashKeys[WHITE_KNIGHT][square];
+		else if (BB::boardSquares[square] & chessPosition->whiteKingBB)	   return mPieceHashKeys[WHITE_KING][square];
 	}
 	else // the occupied square is a black piece...
 	{
-		if		(BB::boardSquares[square] & chessPosition->blackPawnsBB)   return mPieceHashKeys[PieceTypes::BLACK_PAWN][square];
-		else if (BB::boardSquares[square] & chessPosition->blackRooksBB)   return mPieceHashKeys[PieceTypes::BLACK_ROOK][square];
-		else if (BB::boardSquares[square] & chessPosition->blackBishopsBB) return mPieceHashKeys[PieceTypes::BLACK_BISHOP][square];
-		else if (BB::boardSquares[square] & chessPosition->blackQueensBB)  return mPieceHashKeys[PieceTypes::BLACK_QUEEN][square];
-		else if (BB::boardSquares[square] & chessPosition->blackKnightsBB) return mPieceHashKeys[PieceTypes::BLACK_KNIGHT][square];
-		else if (BB::boardSquares[square] & chessPosition->blackKingBB)	   return mPieceHashKeys[PieceTypes::BLACK_KING][square];
+		if		(BB::boardSquares[square] & chessPosition->blackPawnsBB)   return mPieceHashKeys[BLACK_PAWN][square];
+		else if (BB::boardSquares[square] & chessPosition->blackRooksBB)   return mPieceHashKeys[BLACK_ROOK][square];
+		else if (BB::boardSquares[square] & chessPosition->blackBishopsBB) return mPieceHashKeys[BLACK_BISHOP][square];
+		else if (BB::boardSquares[square] & chessPosition->blackQueensBB)  return mPieceHashKeys[BLACK_QUEEN][square];
+		else if (BB::boardSquares[square] & chessPosition->blackKnightsBB) return mPieceHashKeys[BLACK_KNIGHT][square];
+		else if (BB::boardSquares[square] & chessPosition->blackKingBB)	   return mPieceHashKeys[BLACK_KING][square];
 	}
 }
 
@@ -53,21 +70,21 @@ uint64_t ZobristKeyGenerator::getPieceHashKeyForUpdate(ChessPosition* chessPosit
 
 	if (*pieceBB & chessPosition->whitePiecesBB)
 	{
-		if		(*pieceBB & chessPosition->whitePawnsBB)   return mPieceHashKeys[PieceTypes::WHITE_PAWN][square];
-		else if (*pieceBB & chessPosition->whiteRooksBB)   return mPieceHashKeys[PieceTypes::WHITE_ROOK][square];
-		else if (*pieceBB & chessPosition->whiteBishopsBB) return mPieceHashKeys[PieceTypes::WHITE_BISHOP][square];
-		else if (*pieceBB & chessPosition->whiteQueensBB)  return mPieceHashKeys[PieceTypes::WHITE_QUEEN][square];
-		else if (*pieceBB & chessPosition->whiteKnightsBB) return mPieceHashKeys[PieceTypes::WHITE_KNIGHT][square];
-		else if (*pieceBB & chessPosition->whiteKingBB)	   return mPieceHashKeys[PieceTypes::WHITE_KING][square];
+		if		(*pieceBB & chessPosition->whitePawnsBB)   return mPieceHashKeys[WHITE_PAWN][square];
+		else if (*pieceBB & chessPosition->whiteRooksBB)   return mPieceHashKeys[WHITE_ROOK][square];
+		else if (*pieceBB & chessPosition->whiteBishopsBB) return mPieceHashKeys[WHITE_BISHOP][square];
+		else if (*pieceBB & chessPosition->whiteQueensBB)  return mPieceHashKeys[WHITE_QUEEN][square];
+		else if (*pieceBB & chessPosition->whiteKnightsBB) return mPieceHashKeys[WHITE_KNIGHT][square];
+		else if (*pieceBB & chessPosition->whiteKingBB)	   return mPieceHashKeys[WHITE_KING][square];
 	}
 	else // the occupied square is a black piece...
 	{
-		if		(*pieceBB & chessPosition->blackPawnsBB)   return mPieceHashKeys[PieceTypes::BLACK_PAWN][square];
-		else if (*pieceBB & chessPosition->blackRooksBB)   return mPieceHashKeys[PieceTypes::BLACK_ROOK][square];
-		else if (*pieceBB & chessPosition->blackBishopsBB) return mPieceHashKeys[PieceTypes::BLACK_BISHOP][square];
-		else if (*pieceBB & chessPosition->blackQueensBB)  return mPieceHashKeys[PieceTypes::BLACK_QUEEN][square];
-		else if (*pieceBB & chessPosition->blackKnightsBB) return mPieceHashKeys[PieceTypes::BLACK_KNIGHT][square];
-		else if (*pieceBB & chessPosition->blackKingBB)	   return mPieceHashKeys[PieceTypes::BLACK_KING][square];
+		if		(*pieceBB & chessPosition->blackPawnsBB)   return mPieceHashKeys[BLACK_PAWN][square];
+		else if (*pieceBB & chessPosition->blackRooksBB)   return mPieceHashKeys[BLACK_ROOK][square];
+		else if (*pieceBB & chessPosition->blackBishopsBB) return mPieceHashKeys[BLACK_BISHOP][square];
+		else if (*pieceBB & chessPosition->blackQueensBB)  return mPieceHashKeys[BLACK_QUEEN][square];
+		else if (*pieceBB & chessPosition->blackKnightsBB) return mPieceHashKeys[BLACK_KNIGHT][square];
+		else if (*pieceBB & chessPosition->blackKingBB)	   return mPieceHashKeys[BLACK_KING][square];
 	}
 }
 ZobristKey ZobristKeyGenerator::generateKey(ChessPosition* chessPosition)

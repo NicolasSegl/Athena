@@ -5,28 +5,39 @@
 
 #include "Bitboard.h"
 #include "Board.h"
-#include "Constants.h"
+#include "DataTypes.h"
 #include "MoveData.h"
 #include "TranspositionHashEntry.h"
 
 class Athena
 {
 private:
+    enum PieceTypes
+    {
+        PIECE_TYPE_KING,
+        PIECE_TYPE_QUEEN,
+        PIECE_TYPE_ROOK,
+        PIECE_TYPE_BISHOP,
+        PIECE_TYPE_KNIGHT,
+        PIECE_TYPE_PAWN,
+        PIECE_TYPE_NONE,
+    };
+
     Byte MVV_LVATable[7][6] =
     {
-        { 99, 99, 99, 99, 99, 99}, // Victim: K, Attacker: P, N, B, R, Q, K
-        { 20, 19, 19, 18, 17, 16}, // Victim: Q, Attacker: P, N, B, R, Q, K
-        { 15, 14, 14, 13, 12, 11}, // Victim: R, Attacker: P, N, B, R, Q, K
-        { 10, 9, 9, 8, 7, 6},      // Victim: B, Attacker: P, N, B, R, Q, K
-        { 10, 9, 9, 8, 7, 6},      // Victim: N, Attacker: P, N, B, R, Q, K
-        { 5, 4, 4, 3, 2, 1},       // Victim: P, Attacker: P, N, B, R, Q, K
-        { 0, 0, 0, 0, 0, 0},       // Victim: None, Attacker: P, N, B, R, Q, K
+        { 99, 99, 99, 99, 99, 99},  // Victim: K, Attacker: P, N, B, R, Q, K
+        { 20, 19, 19, 18, 17, 16},  // Victim: Q, Attacker: P, N, B, R, Q, K
+        { 15, 14, 14, 13, 12, 11},  // Victim: R, Attacker: P, N, B, R, Q, K
+        { 10, 9, 9, 8, 7, 6},       // Victim: B, Attacker: P, N, B, R, Q, K
+        { 10, 9, 9, 8, 7, 6},       // Victim: N, Attacker: P, N, B, R, Q, K
+        { 5,  4, 4, 3, 2, 1},       // Victim: P, Attacker: P, N, B, R, Q, K
+        { 0,  0, 0, 0, 0, 0},       // Victim: None, Attacker: P, N, B, R, Q, K
     };
     
-    PieceTypes::Types getPieceType(Board* board, Bitboard* pieceBB);
-    int getPieceValue(PieceTypes::Types pieceType);
+    PieceTypes getPieceType(Board* board, Bitboard* pieceBB);
+    int getPieceValue(PieceTypes pieceType);
     
-    MoveData mKillerMoves[AthenaConstants::MAX_PLY][2]{ {}, {} }; // maximum of 2 killer moves per ply
+    MoveData** mKillerMoves;
     void insertKillerMove(MoveData& move, Byte ply);
 
     int mTranspositionTableSize = 20000000;
@@ -40,6 +51,7 @@ private:
     bool mActive = false;
 
     int mNodes;
+    int mMaxPly;
     
     int getScoreRelativeToSide(int score, Colour side) { return score * (1 - 2 * (Byte)side); }
     float getMidgameValue(Bitboard occupiedBB);

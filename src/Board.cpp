@@ -540,9 +540,3 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.blackKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
 }
-
-std::vector<MoveData>& Board::getMovesRef(Colour side)
-{
-    if (side == SIDE_WHITE) return mWhiteMoves;
-    else                    return mBlackMoves;
-}

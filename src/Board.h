@@ -45,7 +45,6 @@ public:
 	Board() {}
 
 	ChessPosition currentPosition;
-	Byte endgameValue, midgameValue;
 
 	void init();
 
@@ -66,8 +65,8 @@ public:
 	Byte computeKingSquare(Bitboard kingBB);
 	bool squareAttacked(Byte square, Colour attackingSide);
 
-	ZobristKey* getZobristKeyHistory()	   { return mZobristKeyHistory;				   }
-	short getCurrentPly()				   { return mPly;							   }
-	short getFiftyMoveCounter()			   { return currentPosition.fiftyMoveCounter;  }
-	std::vector<MoveData>& getMovesRef(Colour side);
+	ZobristKey* getZobristKeyHistory()				{ return mZobristKeyHistory;							 }
+	short getCurrentPly()							{ return mPly;											 }
+	short getFiftyMoveCounter()					    { return currentPosition.fiftyMoveCounter;				 }
+	std::vector<MoveData>& getMovesRef(Colour side) { return side == SIDE_WHITE ? mWhiteMoves : mBlackMoves; }
 };

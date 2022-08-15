@@ -66,7 +66,7 @@ public:
 	bool squareAttacked(Byte square, Colour attackingSide);
 
 	// for static search evaluation
-	void getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard* pieceBB);
+	void getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard** pieceBB, Bitboard* pieceAttacksBB);
 
 	ZobristKey* getZobristKeyHistory()				{ return mZobristKeyHistory;							 }
 	short getCurrentPly()							{ return mPly;											 }

@@ -361,7 +361,7 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 	}
 	else
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 9)))
+		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)))
 			return true;
 	}
     
@@ -385,7 +385,7 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 
 // using the same methods as Board::squareAttacked(), this function returns the value of the least valuable piece attacking the square as well as its piece bitboard
 // it is ordered differently, however, as to make sure the least valuable attackers are considered first
-void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard* pieceBB)
+void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard** pieceBB, Bitboard* pieceAttacksBB)
 {
 	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
 
@@ -393,69 +393,73 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
 	if (attackingSide == SIDE_WHITE)
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)))
+		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)) & BB::boardSquares[square];
+		if (*pieceAttacksBB)
 		{
 			*pieceValue = 1;
-			pieceBB = &currentPosition.whitePawnsBB;
+			*pieceBB = &currentPosition.whitePawnsBB;
 			return;
 		}
 	}
 	else
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 9)))
+		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)) & BB::boardSquares[square];
+		if (*pieceAttacksBB)
 		{
 			*pieceValue = 1;
-			pieceBB = &currentPosition.blackPawnsBB;
+			*pieceBB = &currentPosition.blackPawnsBB;
 			return;
 		}
 	}
 
-	Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKnightsBB : currentPosition.blackKnightsBB;
-	if (mMoveGenerator.knightLookupTable[square] & opKnightsBB)
+	Bitboard* opKnightsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteKnightsBB : &currentPosition.blackKnightsBB;
+	*pieceAttacksBB = mMoveGenerator.knightLookupTable[square] & *opKnightsBB;
+	if (*pieceAttacksBB)
 	{
 		*pieceValue = 3;
-		pieceBB = &opKnightsBB;
+		*pieceBB = opKnightsBB;
 		return;
 	}
 
 	Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? currentPosition.blackPiecesBB : currentPosition.whitePiecesBB;
 
-	Bitboard opBishopsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteBishopsBB : currentPosition.blackBishopsBB;
+	Bitboard* opBishopsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteBishopsBB : &currentPosition.blackBishopsBB;
 	Bitboard bishopMovesBB = mMoveGenerator.computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces);
-	if (bishopMovesBB & opBishopsBB)
+	*pieceAttacksBB = bishopMovesBB & *opBishopsBB;
+	if (*pieceAttacksBB)
 	{
 		*pieceValue = 3;
-		pieceBB = &opBishopsBB;
+		*pieceBB = opBishopsBB;
 		return;
 	}
 
-	Bitboard opRooks = attackingSide == SIDE_WHITE ? currentPosition.whiteRooksBB : currentPosition.blackRooksBB;
+	Bitboard* opRooks = attackingSide == SIDE_WHITE ? &currentPosition.whiteRooksBB : &currentPosition.blackRooksBB;
 	Bitboard rookMovesBB = mMoveGenerator.computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces);
-	if (rookMovesBB & opRooks)
+	*pieceAttacksBB = rookMovesBB & *opRooks;
+	if (*pieceAttacksBB)
 	{
 		*pieceValue = 5;
-		pieceBB = &opRooks;
+		*pieceBB = opRooks;
 		return;
 	}
 
-	Bitboard opQueens = attackingSide == SIDE_WHITE ? currentPosition.whiteQueensBB : currentPosition.blackQueensBB;
-	if ((rookMovesBB | bishopMovesBB) & opQueens)
+	Bitboard* opQueens = attackingSide == SIDE_WHITE ? &currentPosition.whiteQueensBB : &currentPosition.blackQueensBB;
+	*pieceAttacksBB = (rookMovesBB | bishopMovesBB) & *opQueens;
+	if (*pieceAttacksBB)
 	{
 		*pieceValue = 9;
-		pieceBB = &opQueens;
+		*pieceBB = opQueens;
 		return;
 	}
 
-	Bitboard opKingsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB;
-	if (mMoveGenerator.kingLookupTable[square] & opKingsBB)
+	Bitboard* opKingsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteKingBB : &currentPosition.blackKingBB;
+	*pieceAttacksBB = mMoveGenerator.kingLookupTable[square] & *opKingsBB;
+	if (*pieceAttacksBB)
 	{
 		*pieceValue = 99;
-		pieceBB = &opKingsBB;
+		*pieceBB = opKingsBB;
 		return;
 	}
-
-	// if no piece was found
-	pieceBB = nullptr;
 }
 
 // if the move made generated an en passant square, set the current en passant square for the current position

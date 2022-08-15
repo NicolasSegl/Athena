@@ -288,31 +288,27 @@ int Athena::getPieceValue(PieceTypes pieceType)
 // note that this function does not currently consider if a move would result in a check
 int Athena::see(Byte square, Colour attackingSide, int currentSquareValue)
 {
-    // need some kind of stand pat
-    // make a function in board that returns the least valuable attacker to a square using the squareAttacked() function (or something akin to it)
-    // unset the bit, then reset it after recalling this function (so use recursion). this would also get hidden attackers
-
-    // so this function in Board would have to:
-    // return the piece bitboard of the attacker, the bit we're unsetting (use get ls1b. do this in this function actually), and the value of the attacker
-    
-    // make a move (capturing the piece on the square), and make the current value of the square the value of the attacker. use the least valuable piece
     int pieceValue;
-    Bitboard* pieceBB;
-    boardPtr->getLeastValuableAttacker(square, attackingSide, &pieceValue, pieceBB);
+    Bitboard* pieceBB = nullptr;
+    Bitboard  attacksToSquareBB;
+    boardPtr->getLeastValuableAttacker(square, attackingSide, &pieceValue, &pieceBB, &attacksToSquareBB);
     
+    // right now our pieceBB does not actually point to the board's bb for some reason?
+
     if (!pieceBB) // if there are no more attackers
-        return 0;
+        return -currentSquareValue;
     else
-    {
-        // if our least valuable attacker is worth more than the current piece do not take it. this is the
-        // stand pat? but what if we could take it and they could not take it back?
-        
-        // so in here, we have found a piece. now we want to compare it to the current value of the square in question.
-        // if it is worth less, take it no matter what, and return a winning score equal to the delta value. no standing pat. we dont need to bother seeing if it would eventually be losing, as why would we need to? we can just stop at the win we are already at. then search the rest of the moves in quiescence search
-        // if it is worth more, we need to search further. what if they can take it back? what if we can take that piece back? and so on until no pieces attack the tile
-        
+    {        
         if (pieceValue < currentSquareValue)
-            return currentSquareValue - pieceValue;
+            return currentSquareValue - pieceValue; // exchange is winning
+        else
+        {
+            int lsb = BB::getLSB(attacksToSquareBB);
+            *pieceBB ^= BB::boardSquares[lsb]; // "make" the move
+            int score = -see(square, !attackingSide, pieceValue);
+            *pieceBB ^= BB::boardSquares[lsb];// "unmake" the move
+            return score;
+        }
     }
 }
 
@@ -342,6 +338,8 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i);
+        if (see(moves[i].targetSquare, side, getPieceValue(getPieceType(moves[i].capturedPieceBB))) < 0)
+            continue;
 
         if (boardPtr->makeMove(&moves[i]))
         {
@@ -363,8 +361,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 {
     // OR INSUFFICIENT MATERIAL DRAW
     // simplify it all to an isDraw function
-    if (Outcomes::isThreefoldRepetition(boardPtr->getZobristKeyHistory(), boardPtr->getCurrentPly()) || Outcomes::isFiftyMoveDraw(boardPtr->getFiftyMoveCounter()))
-        return 0;
+    //if (Outcomes::isThreefoldRepetition(boardPtr->getZobristKeyHistory(), boardPtr->getCurrentPly()) || Outcomes::isFiftyMoveDraw(boardPtr->getFiftyMoveCounter()))
+    //    return 0;
 
     if (depth <= 0)
         return quietMoveSearch(side, alpha, beta, ply);

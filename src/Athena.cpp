@@ -156,23 +156,10 @@ int Athena::evaluatePosition(Board* board, float midgameValue)
         if (BB::boardSquares[square] & board->currentPosition.emptyBB) // optimization
             continue;
 
-        // for white pawns
-        {
-            // this is checking blocked pawns
-            // if (northOne (i.e. << 8) & whitePawns), then SUBTRACT a value as a penalty
-
-            // blocked pawns. pawns which have a piece direclty in front of them and cannot advance. apply a penalty
-            // isolated pawns. pawns which do not have a friendly pawn defending it. apply a penalty
-            // passed pawn. 
-            // backward pawn
-            // doubled pawn
-
-        }
-
         // consider piece value and piece square table
         if (BB::boardSquares[square] & board->currentPosition.whitePawnsBB)
         {
-            whiteEval += Evaluation::PAWN_VALUE + pst::pawnTable[63 - square];
+            whiteEval += Evaluation::PAWN_VALUE + pst::pawnTable[63 - square] + evaluatePawnValue(board, square, SIDE_WHITE, board->currentPosition.whitePawnsBB);
         }
         else if (BB::boardSquares[square] & board->currentPosition.whiteKnightsBB) whiteEval += Evaluation::KNIGHT_VALUE + pst::knightTable[63 - square];
         else if (BB::boardSquares[square] & board->currentPosition.whiteBishopsBB) whiteEval += Evaluation::BISHOP_VALUE + pst::bishopTable[63 - square];
@@ -182,7 +169,10 @@ int Athena::evaluatePosition(Board* board, float midgameValue)
             // so a pawn hash table is just a transposition table but for pawn structures??
             whiteEval += Evaluation::KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
 
-        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)   blackEval += Evaluation::PAWN_VALUE + pst::pawnTable[square];
+        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)
+        {
+            blackEval += Evaluation::PAWN_VALUE + pst::pawnTable[square] + evaluatePawnValue(board, square, SIDE_BLACK, board->currentPosition.blackPawnsBB);
+        }
         else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += Evaluation::KNIGHT_VALUE + pst::knightTable[square];
         else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += Evaluation::BISHOP_VALUE + pst::bishopTable[square];
         else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += Evaluation::ROOK_VALUE + pst::rookTable[square];

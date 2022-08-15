@@ -36,7 +36,7 @@ private:
     
     PieceTypes getPieceType(Bitboard* pieceBB);
     int getPieceValue(PieceTypes pieceType);
-    int see(Byte square, Colour attackingSide);
+    int see(Byte square, Colour attackingSide, int currentSquareValue);
     
     MoveData** mKillerMoves;
     void insertKillerMove(MoveData& move, Byte ply);

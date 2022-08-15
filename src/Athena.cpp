@@ -286,7 +286,7 @@ int Athena::getPieceValue(PieceTypes pieceType)
 }
 
 // note that this function does not currently consider if a move would result in a check
-int Athena::see(Byte square, Colour attackingSide)
+int Athena::see(Byte square, Colour attackingSide, int currentSquareValue)
 {
     // need some kind of stand pat
     // make a function in board that returns the least valuable attacker to a square using the squareAttacked() function (or something akin to it)
@@ -304,7 +304,15 @@ int Athena::see(Byte square, Colour attackingSide)
         return 0;
     else
     {
-
+        // if our least valuable attacker is worth more than the current piece do not take it. this is the
+        // stand pat? but what if we could take it and they could not take it back?
+        
+        // so in here, we have found a piece. now we want to compare it to the current value of the square in question.
+        // if it is worth less, take it no matter what, and return a winning score equal to the delta value. no standing pat. we dont need to bother seeing if it would eventually be losing, as why would we need to? we can just stop at the win we are already at. then search the rest of the moves in quiescence search
+        // if it is worth more, we need to search further. what if they can take it back? what if we can take that piece back? and so on until no pieces attack the tile
+        
+        if (pieceValue < currentSquareValue)
+            return currentSquareValue - pieceValue;
     }
 }
 

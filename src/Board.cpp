@@ -166,6 +166,16 @@ bool Board::makeMoveLAN(const std::string& lanString)
 		if (moveVec[i].originSquare == moveOriginSquare && moveVec[i].targetSquare == moveTargetSquare)
 		{
 			makeMove(&moveVec[i]);
+			char lastCharacter = lanString.back();
+			// if the last character in the lan move string is a character, then it means a pawn has promoted
+			if (lastCharacter > ASCII::LETTER_A_CODE)
+			{
+				if		(lastCharacter == 'q') promotePiece(&moveVec[i], MoveData::EncodingBits::QUEEN_PROMO);
+				else if (lastCharacter == 'r') promotePiece(&moveVec[i], MoveData::EncodingBits::ROOK_PROMO);
+				else if (lastCharacter == 'n') promotePiece(&moveVec[i], MoveData::EncodingBits::KNIGHT_PROMO);
+				else if (lastCharacter == 'b') promotePiece(&moveVec[i], MoveData::EncodingBits::BISHOP_PROMO);
+			}
+
 			return true;
 		}
 
@@ -180,10 +190,10 @@ std::string Board::getMoveLANString(MoveData* moveData)
 
 	if		(moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)  lanString += "q";
 	else if (moveData->moveType == MoveData::EncodingBits::ROOK_PROMO)   lanString += "r";
-	else if (moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO) lanString += "k";
+	else if (moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO) lanString += "n";
 	else if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO) lanString += "b";
 
-	return getSquareStringCoordinate(moveData->originSquare) + getSquareStringCoordinate(moveData->targetSquare);
+	return lanString;
 }
 
 // initialize the bitboards, move generator tables, etc.

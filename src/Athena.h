@@ -67,7 +67,6 @@ private:
 
     int evaluatePawnValue(int square, Bitboard pawnBB);
     int evaluatePosition(float midgameValue);
-
 public:
     Athena();
     

@@ -409,7 +409,11 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
             if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
+            {
                 mMoveToMake = moves[i];
+                std::cout << "code: " << (int)moves[i].moveType << std::endl;
+                mMoveToMake.setMoveType(MoveData::EncodingBits::QUEEN_PROMO);
+            }
 
             maxEval = std::max(maxEval, eval);
             alpha = std::max(alpha, eval);

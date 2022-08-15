@@ -34,8 +34,9 @@ private:
         { 0,  0, 0, 0, 0, 0},       // Victim: None, Attacker: P, N, B, R, Q, K
     };
     
-    PieceTypes getPieceType(Board* board, Bitboard* pieceBB);
+    PieceTypes getPieceType(Bitboard* pieceBB);
     int getPieceValue(PieceTypes pieceType);
+    int see(Byte square, Colour attackingSide, int currentSquareValue);
     
     MoveData** mKillerMoves;
     void insertKillerMove(MoveData& move, Byte ply);
@@ -52,19 +53,25 @@ private:
 
     int mNodes;
     int mMaxPly;
+    Board* boardPtr;
     
     int getScoreRelativeToSide(int score, Colour side) { return score * (1 - 2 * (Byte)side); }
     float getMidgameValue(Bitboard occupiedBB);
 
-    int negamax(Board* board, int depth, Colour side, int alpha, int beta, Byte ply, bool canNullMove = true);
-    int quietMoveSearch(Board* board, Colour side, int alpha, int beta, Byte ply);
+    int negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool canNullMove = true);
+    int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 
-    void assignMoveScores(Board* board, std::vector<MoveData>& moves, Byte ply);
+    void assignMoveScores(std::vector<MoveData>& moves, Byte ply);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
-    int calculateExtension(Board* board, Colour side, Byte kingSquare);
+    int calculateExtension(Colour side, Byte kingSquare);
 
+<<<<<<< HEAD
     int evaluatePawnValue(Board* board, int square, Colour side, Bitboard pawnBB);
     int evaluatePosition(Board* board, float midgameValue);
+=======
+    int evaluatePawnValue(int square, Bitboard pawnBB);
+    int evaluatePosition(float midgameValue);
+>>>>>>> see
 
 public:
     Athena();

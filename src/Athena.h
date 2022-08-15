@@ -63,7 +63,7 @@ private:
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
     int calculateExtension(Board* board, Colour side, Byte kingSquare);
 
-    int evaluatePawnValue(Board* board, int square, Bitboard pawnBB);
+    int evaluatePawnValue(Board* board, int square, Colour side, Bitboard pawnBB);
     int evaluatePosition(Board* board, float midgameValue);
 
 public:

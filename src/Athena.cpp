@@ -105,23 +105,45 @@ std::string Athena::getOpeningBookMove(Board* board, const std::vector<std::stri
 }
 
 // calculates the value of a pawn based on its structure
-int Athena::evaluatePawnValue(Board* board, int square, Bitboard pawnBB)
+int Athena::evaluatePawnValue(Board* board, int square, Colour side, Bitboard pawnsBB)
 {
     int structureEval = 0;
 
-    // double pawn penalty
-    // note that this works for both black and white pawns, as the penalty is calulcated just once (i.e. we do not apply the penalty
-    // twice, one for each pawn doubled). likewise, if it's a triple pawn, we just actually do apply the penatly twice
-    if (BB::boardSquares[square + 8] & pawnBB)
-        structureEval -= 30; // relatively arbitrary number for now
     //else // if blocked by a piece that is not a pawn
 
     // blocked pawn penalty
     //if ()
 
-    // double pawn penalty
+    // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
+    if ((~BB::rankClear[square / 8] ^ BB::boardSquares[square]) & pawnsBB)
+        structureEval -= 10;
 
-    return 0;
+    // isolated pawns
+    bool isolatedLeftFile = true, isolatedRightFile = true;
+
+    if ((square % 8) - 1 < 0) // if the pawn is not on the a file
+        if (~BB::fileClear[square % 8 - 1] & pawnsBB) // if there is a pawn on the file to the left 
+            isolatedLeftFile = false;
+
+    if (isolatedLeftFile) // if the file to the left has no pawn, then check the right file
+        if ((square % 8) + 1 > 7) // if the pawn is not on the h file
+            if (~BB::fileClear[square % 8 + 1] & pawnsBB) // if there is a pawn on the adjacent right file
+                isolatedRightFile = false;
+
+    if (isolatedRightFile && isolatedLeftFile)
+        structureEval -= 20;
+    // if the pawn is not isolated, it may be backwards
+    else
+    {
+        // if the pawn is BEHIND (higher/lower rank) than 
+        //if (side == SIDE_WHITE)
+         //   if (BB::boardSquares[square] < )
+    }
+
+    // backward pawns
+    
+
+     return 0;
 }
 
 int Athena::evaluatePosition(Board* board, float midgameValue)

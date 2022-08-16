@@ -36,6 +36,7 @@ private:
     
     PieceTypes getPieceType(Bitboard* pieceBB);
     int getPieceValue(PieceTypes pieceType);
+    int pieceValueTo_MVV_LVA_Index(int value);
     int see(Byte square, Colour attackingSide, int currentSquareValue);
     
     MoveData** mKillerMoves;

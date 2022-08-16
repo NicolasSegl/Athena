@@ -406,7 +406,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)) & BB::boardSquares[square];
 		if (*pieceAttacksBB)
 		{
-			*pieceValue = 1;
+			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) >> 7) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9) >> 9);
+			*pieceValue = 100;
 			*pieceBB = &currentPosition.whitePawnsBB;
 			return;
 		}
@@ -416,7 +417,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)) & BB::boardSquares[square];
 		if (*pieceAttacksBB)
 		{
-			*pieceValue = 1;
+			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) << 9) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7) << 7);
+			*pieceValue = 100;
 			*pieceBB = &currentPosition.blackPawnsBB;
 			return;
 		}
@@ -426,7 +428,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = mMoveGenerator.knightLookupTable[square] & *opKnightsBB;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 3;
+		*pieceValue = 320;
 		*pieceBB = opKnightsBB;
 		return;
 	}
@@ -438,7 +440,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = bishopMovesBB & *opBishopsBB;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 3;
+		*pieceValue = 330;
 		*pieceBB = opBishopsBB;
 		return;
 	}
@@ -448,7 +450,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = rookMovesBB & *opRooks;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 5;
+		*pieceValue = 500;
 		*pieceBB = opRooks;
 		return;
 	}
@@ -457,7 +459,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = (rookMovesBB | bishopMovesBB) & *opQueens;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 9;
+		*pieceValue = 900;
 		*pieceBB = opQueens;
 		return;
 	}
@@ -466,7 +468,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = mMoveGenerator.kingLookupTable[square] & *opKingsBB;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 99;
+		*pieceValue = 20000;
 		*pieceBB = opKingsBB;
 		return;
 	}

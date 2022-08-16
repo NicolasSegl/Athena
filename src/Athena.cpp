@@ -64,6 +64,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0) << std::endl;
     auto afterTime = std::chrono::steady_clock::now();
     std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - beforeTime).count() << std::endl;
+    std::cout << "num of nodes: " << mNodes << std::endl;
 
     return mMoveToMake;
 }
@@ -145,7 +146,7 @@ int Athena::evaluatePosition(float midgameValue)
             // blocked pawns. pawns which have a piece direclty in front of them and cannot advance. apply a penalty
             // isolated pawns. pawns which do not have a friendly pawn defending it. apply a penalty
             // passed pawn. 
-            // backward pawn
+            // backward pawn 
             // doubled pawn
 
         }
@@ -185,13 +186,32 @@ void Athena::selectMove(std::vector<MoveData>& moves, Byte startIndex)
             std::swap(moves[i], moves[startIndex]);
 }
 
+int Athena::pieceValueTo_MVV_LVA_Index(int value)
+{
+    switch (value)
+    {
+    case Evaluation::PAWN_VALUE:
+        return PIECE_TYPE_PAWN;
+    case Evaluation::KNIGHT_VALUE:
+        return PIECE_TYPE_KNIGHT;
+    case Evaluation::BISHOP_VALUE:
+        return PIECE_TYPE_BISHOP;
+    case Evaluation::ROOK_VALUE:
+        return PIECE_TYPE_ROOK;
+    case Evaluation::QUEEN_VALUE:
+        return PIECE_TYPE_QUEEN;
+    default:
+        return PIECE_TYPE_KING;
+    }
+}
+
 void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply)
 {
     for (int i = 0; i < moves.size(); i++)
     {
         if (moves[i].capturedPieceBB) // move is violent
-            moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[getPieceType(moves[i].capturedPieceBB)]
-                                                               [getPieceType(moves[i].pieceBB)];
+            moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[pieceValueTo_MVV_LVA_Index(moves[i].capturedPieceValue)]
+                                                               [pieceValueTo_MVV_LVA_Index(moves[i].pieceValue)]; // make a function to convert 1, 3, 5, 9 to index?
         else // move is quiet
             for (int j = 0; j < MAX_KILLER_MOVES; j++)
                 if (moves[i] == mKillerMoves[ply][j])
@@ -304,9 +324,9 @@ int Athena::see(Byte square, Colour attackingSide, int currentSquareValue)
         else
         {
             int lsb = BB::getLSB(attacksToSquareBB);
-            *pieceBB ^= BB::boardSquares[lsb]; // "make" the move
+            *pieceBB &= ~BB::boardSquares[lsb]; // "make" the move
             int score = -see(square, !attackingSide, pieceValue);
-            *pieceBB ^= BB::boardSquares[lsb];// "unmake" the move
+            *pieceBB |= BB::boardSquares[lsb];// "unmake" the move
             return score;
         }
     }
@@ -338,8 +358,8 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i);
-        if (see(moves[i].targetSquare, side, getPieceValue(getPieceType(moves[i].capturedPieceBB))) < 0)
-            continue;
+        if (see(moves[i].targetSquare, side, moves[i].capturedPieceValue) < 0)
+           continue;
 
         if (boardPtr->makeMove(&moves[i]))
         {
@@ -411,8 +431,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
             if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
             {
                 mMoveToMake = moves[i];
-                std::cout << "code: " << (int)moves[i].moveType << std::endl;
-                mMoveToMake.setMoveType(MoveData::EncodingBits::QUEEN_PROMO);
+               // if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
+                 //   mMoveToMake.setMoveType(MoveData::EncodingBits::QUEEN_PROMO);
             }
 
             maxEval = std::max(maxEval, eval);

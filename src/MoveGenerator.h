@@ -41,6 +41,7 @@ private:
     void setCastleMovePrivilegesRevoked(Colour side, Byte privileges, Byte* privilegesToBeRevoked);
     void setCastlePrivileges(Board* board, MoveData* castleMoveData, bool isKing);
     Bitboard* getPieceBitboard(Board* board, Byte square, Colour side = -1); // -1 indicates that no value was passed in
+    void getPieceData(Board* boardPtr, Bitboard** pieceBB, Byte* pieceValue, Byte square, Colour side);
 
 public:
     MoveGenerator() {}

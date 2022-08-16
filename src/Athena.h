@@ -36,6 +36,7 @@ private:
     
     PieceTypes getPieceType(Bitboard* pieceBB);
     int getPieceValue(PieceTypes pieceType);
+    int pieceValueTo_MVV_LVA_Index(int value);
     int see(Byte square, Colour attackingSide, int currentSquareValue);
     
     MoveData** mKillerMoves;
@@ -65,14 +66,10 @@ private:
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
     int calculateExtension(Colour side, Byte kingSquare);
 
-<<<<<<< HEAD
-    int evaluatePawnValue(Board* board, int square, Colour side, Bitboard pawnBB);
-    int evaluatePosition(Board* board, float midgameValue);
-=======
     int evaluatePawnValue(int square, Bitboard pawnBB);
     int evaluatePosition(float midgameValue);
->>>>>>> see
-
+    
+    
 public:
     Athena();
     

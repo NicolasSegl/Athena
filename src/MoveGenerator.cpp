@@ -339,6 +339,78 @@ Bitboard* MoveGenerator::getPieceBitboard(Board* board, Byte square, Colour side
     return nullptr;
 }
 
+void MoveGenerator::getPieceData(Board* boardPtr, Bitboard** pieceBB, Byte* pieceValue, Byte square, Colour side)
+{
+    Bitboard squareBB = BB::boardSquares[square];
+
+    if (side == SIDE_WHITE || side == -1)
+    {
+        if (squareBB & boardPtr->currentPosition.whitePawnsBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.whitePawnsBB;
+            *pieceValue = 100;
+        }
+        else if (squareBB & boardPtr->currentPosition.whiteRooksBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.whiteRooksBB;
+            *pieceValue = 500;
+        }
+        else if (squareBB & boardPtr->currentPosition.whiteKnightsBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.whiteKnightsBB;
+            *pieceValue = 320;
+        }
+        else if (squareBB & boardPtr->currentPosition.whiteBishopsBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.whiteBishopsBB;
+            *pieceValue = 330;
+        }
+        else if (squareBB & boardPtr->currentPosition.whiteQueensBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.whiteQueensBB;
+            *pieceValue = 900;
+        }
+        else if (squareBB & boardPtr->currentPosition.whiteKingBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.whiteKingBB;
+            *pieceValue = 20000;
+        }
+    }
+    if (side == SIDE_BLACK || side == -1)
+    {
+        if (squareBB & boardPtr->currentPosition.blackPawnsBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.blackPawnsBB;
+            *pieceValue = 100;
+        }
+        else if (squareBB & boardPtr->currentPosition.blackRooksBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.blackRooksBB;
+            *pieceValue = 500;
+        }
+        else if (squareBB & boardPtr->currentPosition.blackKnightsBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.blackKnightsBB;
+            *pieceValue = 320;
+        }
+        else if (squareBB & boardPtr->currentPosition.blackBishopsBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.blackBishopsBB;
+            *pieceValue = 330;
+        }
+        else if (squareBB & boardPtr->currentPosition.blackQueensBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.blackQueensBB;
+            *pieceValue = 900;
+        }
+        else if (squareBB & boardPtr->currentPosition.blackKingBB)
+        {
+            *pieceBB = &boardPtr->currentPosition.blackKingBB;
+            *pieceValue = 20000;
+        }
+    }
+}
+
 /*
 
 
@@ -413,11 +485,10 @@ void MoveGenerator::calculatePieceMoves(Board* board, Colour side, Byte originSq
         md.originSquare = originSquare;
 
         Bitboard movesBB = 0;
-        Bitboard* pieceBBPtr = getPieceBitboard(board, originSquare, side);
+        //Bitboard* pieceBBPtr = getPieceBitboard(board, originSquare, side);
+        getPieceData(board, &md.pieceBB, &md.pieceValue, originSquare, side);
 
-        md.pieceBB = pieceBBPtr;
-
-        movesBB = calculatePsuedoMove(board, &md, *pieceBBPtr);
+        movesBB = calculatePsuedoMove(board, &md, *md.pieceBB);
 
         if (movesBB > 0)
             addMoves(board, movesBB, md, moveVec, captureOnly);
@@ -542,7 +613,8 @@ void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::
             md.setMoveType(MoveData::EncodingBits::REGULAR);
 
             if (BB::boardSquares[square] & *md.capturedColourBB)
-                md.capturedPieceBB = getPieceBitboard(board, square, !md.side);
+                // md.capturedPieceBB = getPieceBitboard(board, square, !md.side);
+                getPieceData(board, &md.capturedPieceBB, &md.capturedPieceValue, square, !md.side);
 
             if (captureOnly && !md.capturedPieceBB)
                 continue;

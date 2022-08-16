@@ -64,6 +64,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0) << std::endl;
     auto afterTime = std::chrono::steady_clock::now();
     std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - beforeTime).count() << std::endl;
+    std::cout << "num of nodes: " << mNodes << std::endl;
 
     return mMoveToMake;
 }
@@ -108,11 +109,7 @@ std::string Athena::getOpeningBookMove(Board* boardPtr, const std::vector<std::s
 }
 
 // calculates the value of a pawn based on its structure
-<<<<<<< HEAD
-int Athena::evaluatePawnValue(Board* board, int square, Colour side, Bitboard pawnsBB)
-=======
-int Athena::evaluatePawnValue(int square, Bitboard pawnBB)
->>>>>>> see
+int Athena::evaluatePawnValue(int square, Bitboard pawnsBB)
 {
     int structureEval = 0;
 
@@ -166,7 +163,7 @@ int Athena::evaluatePosition(float midgameValue)
         // consider piece value and piece square table
         if (BB::boardSquares[square] & boardPtr->currentPosition.whitePawnsBB)
         {
-            whiteEval += Evaluation::PAWN_VALUE + pst::pawnTable[63 - square] + evaluatePawnValue(board, square, SIDE_WHITE, board->currentPosition.whitePawnsBB);
+            whiteEval += Evaluation::PAWN_VALUE + pst::pawnTable[63 - square] + evaluatePawnValue(square, boardPtr->currentPosition.whitePawnsBB);
         }
         else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKnightsBB) whiteEval += Evaluation::KNIGHT_VALUE + pst::knightTable[63 - square];
         else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteBishopsBB) whiteEval += Evaluation::BISHOP_VALUE + pst::bishopTable[63 - square];
@@ -175,25 +172,12 @@ int Athena::evaluatePosition(float midgameValue)
         else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKingBB)
             // so a pawn hash table is just a transposition table but for pawn structures??
             whiteEval += Evaluation::KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
-
-<<<<<<< HEAD
-        else if (BB::boardSquares[square] & board->currentPosition.blackPawnsBB)
-        {
-            blackEval += Evaluation::PAWN_VALUE + pst::pawnTable[square] + evaluatePawnValue(board, square, SIDE_BLACK, board->currentPosition.blackPawnsBB);
-        }
-        else if (BB::boardSquares[square] & board->currentPosition.blackKnightsBB) blackEval += Evaluation::KNIGHT_VALUE + pst::knightTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackBishopsBB) blackEval += Evaluation::BISHOP_VALUE + pst::bishopTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackRooksBB)   blackEval += Evaluation::ROOK_VALUE + pst::rookTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackQueensBB)  blackEval += Evaluation::QUEEN_VALUE + pst::queenTable[square];
-        else if (BB::boardSquares[square] & board->currentPosition.blackKingBB)
-=======
         else if (BB::boardSquares[square] & boardPtr->currentPosition.blackPawnsBB)   blackEval += Evaluation::PAWN_VALUE + pst::pawnTable[square];
         else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKnightsBB) blackEval += Evaluation::KNIGHT_VALUE + pst::knightTable[square];
         else if (BB::boardSquares[square] & boardPtr->currentPosition.blackBishopsBB) blackEval += Evaluation::BISHOP_VALUE + pst::bishopTable[square];
         else if (BB::boardSquares[square] & boardPtr->currentPosition.blackRooksBB)   blackEval += Evaluation::ROOK_VALUE + pst::rookTable[square];
         else if (BB::boardSquares[square] & boardPtr->currentPosition.blackQueensBB)  blackEval += Evaluation::QUEEN_VALUE + pst::queenTable[square];
         else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKingBB)
->>>>>>> see
             blackEval += Evaluation::KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
     }
     
@@ -210,13 +194,32 @@ void Athena::selectMove(std::vector<MoveData>& moves, Byte startIndex)
             std::swap(moves[i], moves[startIndex]);
 }
 
+int Athena::pieceValueTo_MVV_LVA_Index(int value)
+{
+    switch (value)
+    {
+    case Evaluation::PAWN_VALUE:
+        return PIECE_TYPE_PAWN;
+    case Evaluation::KNIGHT_VALUE:
+        return PIECE_TYPE_KNIGHT;
+    case Evaluation::BISHOP_VALUE:
+        return PIECE_TYPE_BISHOP;
+    case Evaluation::ROOK_VALUE:
+        return PIECE_TYPE_ROOK;
+    case Evaluation::QUEEN_VALUE:
+        return PIECE_TYPE_QUEEN;
+    default:
+        return PIECE_TYPE_KING;
+    }
+}
+
 void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply)
 {
     for (int i = 0; i < moves.size(); i++)
     {
         if (moves[i].capturedPieceBB) // move is violent
-            moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[getPieceType(moves[i].capturedPieceBB)]
-                                                               [getPieceType(moves[i].pieceBB)];
+            moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[pieceValueTo_MVV_LVA_Index(moves[i].capturedPieceValue)]
+                                                               [pieceValueTo_MVV_LVA_Index(moves[i].pieceValue)]; // make a function to convert 1, 3, 5, 9 to index?
         else // move is quiet
             for (int j = 0; j < MAX_KILLER_MOVES; j++)
                 if (moves[i] == mKillerMoves[ply][j])
@@ -329,9 +332,9 @@ int Athena::see(Byte square, Colour attackingSide, int currentSquareValue)
         else
         {
             int lsb = BB::getLSB(attacksToSquareBB);
-            *pieceBB ^= BB::boardSquares[lsb]; // "make" the move
+            *pieceBB &= ~BB::boardSquares[lsb]; // "make" the move
             int score = -see(square, !attackingSide, pieceValue);
-            *pieceBB ^= BB::boardSquares[lsb];// "unmake" the move
+            *pieceBB |= BB::boardSquares[lsb];// "unmake" the move
             return score;
         }
     }
@@ -363,8 +366,8 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i);
-        if (see(moves[i].targetSquare, side, getPieceValue(getPieceType(moves[i].capturedPieceBB))) < 0)
-            continue;
+        if (see(moves[i].targetSquare, side, moves[i].capturedPieceValue) < 0)
+           continue;
 
         if (boardPtr->makeMove(&moves[i]))
         {
@@ -434,7 +437,11 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
             if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
+            {
                 mMoveToMake = moves[i];
+               // if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
+                 //   mMoveToMake.setMoveType(MoveData::EncodingBits::QUEEN_PROMO);
+            }
 
             maxEval = std::max(maxEval, eval);
             alpha = std::max(alpha, eval);

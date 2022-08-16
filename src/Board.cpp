@@ -166,6 +166,16 @@ bool Board::makeMoveLAN(const std::string& lanString)
 		if (moveVec[i].originSquare == moveOriginSquare && moveVec[i].targetSquare == moveTargetSquare)
 		{
 			makeMove(&moveVec[i]);
+			char lastCharacter = lanString.back();
+			// if the last character in the lan move string is a character, then it means a pawn has promoted
+			if (lastCharacter > ASCII::LETTER_A_CODE)
+			{
+				if		(lastCharacter == 'q') promotePiece(&moveVec[i], MoveData::EncodingBits::QUEEN_PROMO);
+				else if (lastCharacter == 'r') promotePiece(&moveVec[i], MoveData::EncodingBits::ROOK_PROMO);
+				else if (lastCharacter == 'n') promotePiece(&moveVec[i], MoveData::EncodingBits::KNIGHT_PROMO);
+				else if (lastCharacter == 'b') promotePiece(&moveVec[i], MoveData::EncodingBits::BISHOP_PROMO);
+			}
+
 			return true;
 		}
 
@@ -180,10 +190,10 @@ std::string Board::getMoveLANString(MoveData* moveData)
 
 	if		(moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)  lanString += "q";
 	else if (moveData->moveType == MoveData::EncodingBits::ROOK_PROMO)   lanString += "r";
-	else if (moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO) lanString += "k";
+	else if (moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO) lanString += "n";
 	else if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO) lanString += "b";
 
-	return getSquareStringCoordinate(moveData->originSquare) + getSquareStringCoordinate(moveData->targetSquare);
+	return lanString;
 }
 
 // initialize the bitboards, move generator tables, etc.
@@ -396,7 +406,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)) & BB::boardSquares[square];
 		if (*pieceAttacksBB)
 		{
-			*pieceValue = 1;
+			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) >> 7) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9) >> 9);
+			*pieceValue = 100;
 			*pieceBB = &currentPosition.whitePawnsBB;
 			return;
 		}
@@ -406,7 +417,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)) & BB::boardSquares[square];
 		if (*pieceAttacksBB)
 		{
-			*pieceValue = 1;
+			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) << 9) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7) << 7);
+			*pieceValue = 100;
 			*pieceBB = &currentPosition.blackPawnsBB;
 			return;
 		}
@@ -416,7 +428,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = mMoveGenerator.knightLookupTable[square] & *opKnightsBB;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 3;
+		*pieceValue = 320;
 		*pieceBB = opKnightsBB;
 		return;
 	}
@@ -428,7 +440,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = bishopMovesBB & *opBishopsBB;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 3;
+		*pieceValue = 330;
 		*pieceBB = opBishopsBB;
 		return;
 	}
@@ -438,7 +450,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = rookMovesBB & *opRooks;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 5;
+		*pieceValue = 500;
 		*pieceBB = opRooks;
 		return;
 	}
@@ -447,7 +459,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = (rookMovesBB | bishopMovesBB) & *opQueens;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 9;
+		*pieceValue = 900;
 		*pieceBB = opQueens;
 		return;
 	}
@@ -456,7 +468,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	*pieceAttacksBB = mMoveGenerator.kingLookupTable[square] & *opKingsBB;
 	if (*pieceAttacksBB)
 	{
-		*pieceValue = 99;
+		*pieceValue = 20000;
 		*pieceBB = opKingsBB;
 		return;
 	}

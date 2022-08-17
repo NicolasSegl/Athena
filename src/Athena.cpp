@@ -363,7 +363,8 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     mNodes++;
     // the lower bound for the best possible move for the moving side. if no capture move would result in a better position for the playing side,
     // then we just would simply not make the capture move (and return the calculated best move evaluation, aka alpha)
-    int standPat = getScoreRelativeToSide(evaluatePosition(getMidgameValue(boardPtr->currentPosition.occupiedBB)), side);
+    float midgameValue = getMidgameValue(boardPtr->currentPosition.occupiedBB);
+    int standPat = getScoreRelativeToSide(evaluatePosition(midgameValue), side);
 
     if (standPat >= beta)
         return beta;
@@ -383,7 +384,7 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i);
-        if (moves[i].capturedPieceValue + 200 < alpha)
+        if (moves[i].capturedPieceValue + 200 < alpha && midgameValue > 0.25)
             continue;
         if (see(moves[i].targetSquare, side, moves[i].capturedPieceValue) < 0)
             continue;

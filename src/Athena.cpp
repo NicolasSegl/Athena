@@ -70,41 +70,62 @@ MoveData Athena::search(Board* ptr, float timeToMove)
 }
 
 // finds an opening move from book.txt (file provided by tscp, an educational open source chess engine)
+/*
+   openings books courtesy of lichess. the 5 files are taken from https://github.com/lichess-org/chess-openings
+   the .tsv files have the uci codes for the openings at the third tab. from thereon the LAN moves are 
+   separated by space
+*/
 std::string Athena::getOpeningBookMove(Board* boardPtr, const std::vector<std::string>& lanStringHistory)
 {
-    std::ifstream bookFile;
-    bookFile.open("engines/book.txt");
+    // files are labeled a through e
 
-    // search through the whole file and pick the move that has the longest opening sequence
-    std::string openingLine;
     std::string moveToMake = "";
     int longestLine = 0;
-    while (std::getline(bookFile, openingLine))
+    for (char character = 'a'; character <= 'e'; character++)
     {
-        // set mMoveToMake's origin and target squares
-        std::vector<std::string> lineMoves;
-        splitString(openingLine, lineMoves, ' ');
-        
-        if (lineMoves.size() > longestLine && lineMoves.size() > lanStringHistory.size())
-        {
-            // if the moves made so far in the game match up with this opening line's moves
-            bool isActiveLine = true;
-            for (int move = 0; move < lanStringHistory.size(); move++)
-                if (lanStringHistory[move] != lineMoves[move])
-                {
-                    isActiveLine = false;
-                    break;
-                }
+        std::ifstream bookFile;
+        std::string fileName = "books/";
+        fileName += character;
+        fileName += ".tsv";
+        bookFile.open(fileName);
 
-            // then set the next as the move to make
-            if (isActiveLine)
+        // extract the data from the opening book files
+        std::vector<std::string> fileFields;
+        std::string fileLine;
+        while (std::getline(bookFile, fileLine))
+        {
+            fileFields.clear();
+            //std::getline(bookFile, fileLine);
+            splitString(fileLine, fileFields, 0x9); // 0x9 is the ascii code character for tabs
+
+            // get the list of lan string moves for the considered opening
+            std::vector<std::string> lanMovesVec;
+            splitString(fileFields[3], lanMovesVec, ' ');
+
+            for (int move = 0; move < lanMovesVec.size(); move++)
             {
-                moveToMake  = lineMoves[lanStringHistory.size()]; // indexes the current opening line move plus 1
-                longestLine = lineMoves.size();
+                if (lanMovesVec.size() > longestLine && lanMovesVec.size() > lanStringHistory.size())
+                {
+                    // if the moves made so far in the game match up with this opening line's moves
+                    bool isActiveLine = true;
+                    for (int move = 0; move < lanStringHistory.size(); move++)
+                        if (lanStringHistory[move] != lanMovesVec[move])
+                        {
+                            isActiveLine = false;
+                            break;
+                        }
+
+                    // then set the next as the move to make
+                    if (isActiveLine)
+                    {
+                        moveToMake = lanMovesVec[lanStringHistory.size()]; // indexes the current opening line move plus 1
+                        longestLine = lanMovesVec.size();
+                    }
+                }
             }
         }
     }
-
+    
     return moveToMake;
 }
 

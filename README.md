@@ -12,3 +12,6 @@ Athena is a UCI compatible chess engine. It is a work-in-progress and can curren
 * Killer move ordering heuristic
 * MVV_LVVA ordering heuristic
 * Null-move pruning
+
+# Misc
+If attempting to compile, make sure that the "/books/" folder is in the current working directory in order for Athena to be able to find her opening moves

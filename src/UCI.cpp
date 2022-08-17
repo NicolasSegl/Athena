@@ -22,6 +22,7 @@ void UCI::respondUCI()
 // response to "isready" command
 void UCI::respondIsReady()
 {
+	initBitsSetTable();
 	std::cout << "readyok\n";
 }
 

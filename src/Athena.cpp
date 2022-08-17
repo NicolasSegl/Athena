@@ -288,11 +288,7 @@ int Athena::calculateExtension(Colour side, Byte kingSquare)
 
 float Athena::getMidgameValue(Bitboard occupiedBB)
 {
-    int count = 0;
-    for (int bit = 0; bit < 64; bit++)
-        if ((occupiedBB >> bit) & 1) count++;
-
-    return count/32.f; // 32 = number of total pieces possible
+    return countSetBits64(occupiedBB)/32.f; // 32 = number of total pieces possible
 }
 
 void Athena::insertTranspositionEntry(TranspositionHashEntry* hashEntry, int maxEval, int ogAlpha, int beta)

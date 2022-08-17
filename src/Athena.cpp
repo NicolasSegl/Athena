@@ -383,8 +383,10 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i);
+        if (moves[i].capturedPieceValue + 200 < alpha)
+            continue;
         if (see(moves[i].targetSquare, side, moves[i].capturedPieceValue) < 0)
-           continue;
+            continue;
 
         if (boardPtr->makeMove(&moves[i]))
         {

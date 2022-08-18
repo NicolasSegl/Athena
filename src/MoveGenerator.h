@@ -34,7 +34,7 @@ private:
     // the following functions are used when generating moves
     Bitboard calculatePsuedoMove(Board* board, MoveData* md, Bitboard& pieceBB);
 
-    void setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md);
+    inline void setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md);
     bool doesCaptureAffectCastle(Board* board, MoveData* md);
     void addMoves(Board* board, Bitboard movesBB, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly);
 

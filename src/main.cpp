@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 {
 	std::srand(time(NULL));
 
-    auto beforeTime = std::chrono::steady_clock::now();
+    /*auto beforeTime = std::chrono::steady_clock::now();
     auto afterTime = std::chrono::steady_clock::now();
 
     Board board;
@@ -26,9 +26,9 @@ int main(int argc, char** argv)
         board.calculateSideMoves(SIDE_WHITE);
         afterTime = std::chrono::steady_clock::now();
     }
-    std::cout << "number of times: " << count << std::endl;
-	//UCI uci;
-	//uci.run();
+    std::cout << "number of times: " << count << std::endl;*/
+	UCI uci;
+	uci.run();
 	return 0;
 }
 

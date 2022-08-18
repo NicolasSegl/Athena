@@ -434,9 +434,10 @@ void MoveGenerator::calculateSideMoves(Board* board, Colour side, bool captureOn
     std::vector<MoveData>& moveVec = board->getMovesRef(side);
     moveVec.clear();
     moveVec.reserve(64);
-    
+    Bitboard colourBB = side == SIDE_WHITE ? board->currentPosition.whitePiecesBB : board->currentPosition.blackPiecesBB;
+
     for (int square = 0; square < 64; square++)
-        if (BB::boardSquares[square] & board->currentPosition.occupiedBB)
+        if (BB::boardSquares[square] & colourBB)
             calculatePieceMoves(board, side, square, moveVec, captureOnly);
 
     // could we remove this and only calculate castle moves when we come across a king?
@@ -571,9 +572,10 @@ bool MoveGenerator::doesCaptureAffectCastle(Board* board, MoveData* md)
     return doesAffectCastlePrivileges;
 }
 
-void MoveGenerator::setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md)
+inline void MoveGenerator::setEnPassantMoveData(Board* board, int square, Bitboard pieceMovesBB, MoveData* md)
 {
     if (board->currentPosition.enPassantSquare < 64)
+    {
         if (BB::boardSquares[square] & BB::boardSquares[board->currentPosition.enPassantSquare])
         {
             if (pieceMovesBB & BB::boardSquares[board->currentPosition.enPassantSquare])
@@ -593,13 +595,13 @@ void MoveGenerator::setEnPassantMoveData(Board* board, int square, Bitboard piec
             }
         }
 
-    if (board->currentPosition.enPassantSquare < 64)
         md->enPassantSquare = board->currentPosition.enPassantSquare;
+    }
 }
 
 void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly)
 {
-    /*for (int square = 0; square < 64; square++)
+    for (int square = 0; square < 64; square++)
     {
         if (movesBB & BB::boardSquares[square])
         {
@@ -608,7 +610,6 @@ void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::
             md.setMoveType(MoveData::EncodingBits::REGULAR);
 
             if (BB::boardSquares[square] & *md.capturedColourBB)
-                // md.capturedPieceBB = getPieceBitboard(board, square, !md.side);
                 getPieceData(board, &md.capturedPieceBB, &md.capturedPieceValue, square, !md.side);
 
             if (captureOnly && !md.capturedPieceBB)
@@ -627,5 +628,5 @@ void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::
             if (resetCastlePrivileges)
                 md.castlePrivilegesRevoked = 0;
         }
-    }*/
+    }
 }

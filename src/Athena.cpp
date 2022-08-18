@@ -32,7 +32,7 @@ const int MAX_KILLER_MOVES = 2;
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
-    mDepth = 6;
+    mDepth = 7;
     mMaxPly = 15;
     mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
     clearTranspositionTable();
@@ -377,8 +377,9 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     if (ply >= mMaxPly)
         return alpha;
 
-    boardPtr->calculateSideMovesCapturesOnly(side);
-    std::vector<MoveData> moves = boardPtr->getMovesRef(side);
+    std::vector<MoveData> moves;
+    boardPtr->calculateSideMovesCapturesOnly(side, moves);
+    //std::vector<MoveData> moves = boardPtr->getMovesRef(side);
     assignMoveScores(moves, ply);
 
     for (int i = 0; i < moves.size(); i++)
@@ -436,8 +437,9 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
     // used for determining the transposition table entry's flag for this call to negamax
     int ogAlpha = alpha; 
 
-    boardPtr->calculateSideMoves(side);
-    std::vector<MoveData> moves = boardPtr->getMovesRef(side);
+    std::vector<MoveData> moves;
+    boardPtr->calculateSideMoves(side, moves);
+    //std::vector<MoveData> moves = boardPtr->getMovesRef(side);
 
     int maxEval = -INF;
     assignMoveScores(moves, ply);
@@ -445,7 +447,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i); // swaps current move with the most likely good move in the move list
-
+        
         // if makemove is legal (i.e. wouldn't result in a check)
         if (boardPtr->makeMove(&moves[i]))
         {
@@ -457,11 +459,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
             if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
-            {
                 mMoveToMake = moves[i];
-               // if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
-                 //   mMoveToMake.setMoveType(MoveData::EncodingBits::QUEEN_PROMO);
-            }
 
             maxEval = std::max(maxEval, eval);
             alpha = std::max(alpha, eval);

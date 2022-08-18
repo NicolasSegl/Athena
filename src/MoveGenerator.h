@@ -62,7 +62,7 @@ public:
     void calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec, bool captureOnly);
     MoveData computeCastleMoveData(Colour side, Byte privileges, Bitboard occupiedBB, CastlingPrivilege castleType);
     
-    void calculateSideMoves(Board* board, Colour side, bool captureOnly = false);
-    void calculateCaptureMoves(Board* board, Colour side);
+    void calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly = false);
+    void calculateCaptureMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
     void calculateCastleMoves(Board* board, Colour side, std::vector<MoveData>& moveVec);
 };

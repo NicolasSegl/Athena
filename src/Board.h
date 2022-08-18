@@ -59,8 +59,8 @@ public:
 	void promotePiece(MoveData* md, MoveData::EncodingBits promoteTo);
 
 	// fetching moves for a side from MoveGenerator
-	void calculateSideMoves(Colour side);
-	void calculateSideMovesCapturesOnly(Colour side);
+	void calculateSideMoves(Colour side, std::vector<MoveData>& moveVec);
+	void calculateSideMovesCapturesOnly(Colour side, std::vector<MoveData>& moveVec);
 	
 	Byte computeKingSquare(Bitboard kingBB);
 	bool squareAttacked(Byte square, Colour attackingSide);

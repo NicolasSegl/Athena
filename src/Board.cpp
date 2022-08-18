@@ -210,15 +210,15 @@ void Board::init()
 }
 
 // calls MoveGenerator to calculate all possible moves for the given side (putting them in a reference vector of Board::whiteMoves or board::blackMoves)
-void Board::calculateSideMoves(Colour side)
+void Board::calculateSideMoves(Colour side, std::vector<MoveData>& moveVec)
 {
-    mMoveGenerator.calculateSideMoves(this, side);
+    mMoveGenerator.calculateSideMoves(this, side, moveVec);
 }
 
 // calls MoveGenerator to calculate all possible capture moves for the given side (putting them in a reference vector of Board::whiteMoves or board::blackMoves)
-void Board::calculateSideMovesCapturesOnly(Colour side)
+void Board::calculateSideMovesCapturesOnly(Colour side, std::vector<MoveData>& moveVec)
 {
-	mMoveGenerator.calculateSideMoves(this, side, true);
+	mMoveGenerator.calculateSideMoves(this, side, moveVec, true);
 }
 
 // set the basic move data (origin/target square, colour bitboard, and piece bitboard) of the two moves made during a castle move
@@ -342,11 +342,7 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 // loop through the board until the square of the king is found
 Byte Board::computeKingSquare(Bitboard kingBB)
 {
-    for (int i = 0; i < 64; i++)
-        if (BB::boardSquares[i] & kingBB)
-            return i;
-    
-    return -1;
+	return BB::getLSB(kingBB);
 }
 
 /* 

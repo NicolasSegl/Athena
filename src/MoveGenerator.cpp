@@ -307,9 +307,9 @@ MoveData MoveGenerator::computeCastleMoveData(Colour side, Byte privileges, Bitb
     return md;
 }
 
-void MoveGenerator::calculateCaptureMoves(Board* board, Colour side)
+void MoveGenerator::calculateCaptureMoves(Board* board, Colour side, std::vector<MoveData>& moveVec)
 {
-    calculateSideMoves(board, side, true);
+    calculateSideMoves(board, side, moveVec, true);
 }
 
 // side is a default value with a value of -1. this value indicates no side was specified and to search all bitboards
@@ -429,9 +429,9 @@ we are calulating it every time, but we should be at least checking the privileg
 
 */
 
-void MoveGenerator::calculateSideMoves(Board* board, Colour side, bool captureOnly)
+void MoveGenerator::calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly)
 {
-    std::vector<MoveData>& moveVec = board->getMovesRef(side);
+    //std::vector<MoveData>& moveVec = board->getMovesRef(side);
     moveVec.clear();
     moveVec.reserve(64);
     Bitboard colourBB = side == SIDE_WHITE ? board->currentPosition.whitePiecesBB : board->currentPosition.blackPiecesBB;

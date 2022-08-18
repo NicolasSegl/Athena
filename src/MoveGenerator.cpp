@@ -343,7 +343,7 @@ void MoveGenerator::getPieceData(Board* boardPtr, Bitboard** pieceBB, Byte* piec
 {
     Bitboard squareBB = BB::boardSquares[square];
 
-    if (side == SIDE_WHITE || side == -1)
+    if (side == SIDE_WHITE)
     {
         if (squareBB & boardPtr->currentPosition.whitePawnsBB)
         {
@@ -376,7 +376,7 @@ void MoveGenerator::getPieceData(Board* boardPtr, Bitboard** pieceBB, Byte* piec
             *pieceValue = 20000;
         }
     }
-    if (side == SIDE_BLACK || side == -1)
+    else
     {
         if (squareBB & boardPtr->currentPosition.blackPawnsBB)
         {
@@ -433,10 +433,11 @@ void MoveGenerator::calculateSideMoves(Board* board, Colour side, bool captureOn
 {
     std::vector<MoveData>& moveVec = board->getMovesRef(side);
     moveVec.clear();
-    moveVec.reserve(100);
+    moveVec.reserve(64);
     
     for (int square = 0; square < 64; square++)
-        calculatePieceMoves(board, side, square, moveVec, captureOnly);
+        if (BB::boardSquares[square] & board->currentPosition.occupiedBB)
+            calculatePieceMoves(board, side, square, moveVec, captureOnly);
 
     // could we remove this and only calculate castle moves when we come across a king?
     if (!captureOnly)
@@ -474,25 +475,19 @@ void MoveGenerator::calculateCastleMoves(Board* board, Colour side, std::vector<
 void MoveGenerator::calculatePieceMoves(Board* board, Colour side, Byte originSquare, std::vector<MoveData>& moveVec, bool captureOnly)
 {
     MoveData md;
-    
-    // captured piece would be the opposite colour of the piece moving
-    md.colourBB         = side == SIDE_WHITE ? &board->currentPosition.whitePiecesBB : &board->currentPosition.blackPiecesBB;
+    md.colourBB = side == SIDE_WHITE ? &board->currentPosition.whitePiecesBB : &board->currentPosition.blackPiecesBB;
     md.capturedColourBB = side == SIDE_WHITE ? &board->currentPosition.blackPiecesBB : &board->currentPosition.whitePiecesBB;
     
-    if (BB::boardSquares[originSquare] & *md.colourBB)
-    {
-        md.side = side;
-        md.originSquare = originSquare;
+    md.side = side;
+    md.originSquare = originSquare;
 
-        Bitboard movesBB = 0;
-        //Bitboard* pieceBBPtr = getPieceBitboard(board, originSquare, side);
-        getPieceData(board, &md.pieceBB, &md.pieceValue, originSquare, side);
+    Bitboard movesBB = 0;
+    getPieceData(board, &md.pieceBB, &md.pieceValue, originSquare, side);
 
-        movesBB = calculatePsuedoMove(board, &md, *md.pieceBB);
+    movesBB = calculatePsuedoMove(board, &md, *md.pieceBB);
 
-        if (movesBB > 0)
-            addMoves(board, movesBB, md, moveVec, captureOnly);
-    }
+    if (movesBB > 0)
+        addMoves(board, movesBB, md, moveVec, captureOnly);
 }
 
 void MoveGenerator::setCastlePrivileges(Board* board, MoveData* md, bool isKing)
@@ -604,7 +599,7 @@ void MoveGenerator::setEnPassantMoveData(Board* board, int square, Bitboard piec
 
 void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::vector<MoveData>& moveVec, bool captureOnly)
 {
-    for (int square = 0; square < 64; square++)
+    /*for (int square = 0; square < 64; square++)
     {
         if (movesBB & BB::boardSquares[square])
         {
@@ -632,5 +627,5 @@ void MoveGenerator::addMoves(Board* board, Bitboard movesBB, MoveData& md, std::
             if (resetCastlePrivileges)
                 md.castlePrivilegesRevoked = 0;
         }
-    }
+    }*/
 }

@@ -1,5 +1,7 @@
+#include <chrono>
 #include <random>
 #include <time.h>
+#include <iostream>
 
 #include "ChessGame.h"
 #include "UCI.h"
@@ -10,8 +12,23 @@ int main(int argc, char** argv)
 {
 	std::srand(time(NULL));
 
-	UCI uci;
-	uci.run();
+    auto beforeTime = std::chrono::steady_clock::now();
+    auto afterTime = std::chrono::steady_clock::now();
+
+    Board board;
+    board.setPositionFEN("r1b2rk1/pp1p1pp1/2pq3p/2bNp3/2BnP3/3P1N2/PPP2PPP/R2Q1RK1 w - - 0 11");
+    int count = 0;
+    
+    // on average, around 1485838 times in a second
+    while (std::chrono::duration<double>(afterTime - beforeTime).count() < 1)
+    {
+        count++;
+        board.calculateSideMoves(SIDE_WHITE);
+        afterTime = std::chrono::steady_clock::now();
+    }
+    std::cout << "number of times: " << count << std::endl;
+	//UCI uci;
+	//uci.run();
 	return 0;
 }
 

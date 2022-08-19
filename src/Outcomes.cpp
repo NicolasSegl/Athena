@@ -1,3 +1,4 @@
+#include "Board.h"
 #include "Outcomes.h"
 
 namespace Outcomes
@@ -17,4 +18,9 @@ namespace Outcomes
 	}
 
 	bool isFiftyMoveDraw(int fiftyMoveCounter) { return fiftyMoveCounter >= 100; }
+
+	bool isDraw(Board* boardPtr)
+	{
+		return isThreefoldRepetition(boardPtr->getZobristKeyHistory(), boardPtr->getCurrentPly()) || isFiftyMoveDraw(boardPtr->getFiftyMoveCounter());
+	}
 }

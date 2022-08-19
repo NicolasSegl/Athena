@@ -2,6 +2,8 @@
 
 #include "ZobristKeyGenerator.h"
 
+class Board;
+
 namespace Outcomes
 {
 	// to see if it's a three repetition draw:
@@ -10,4 +12,5 @@ namespace Outcomes
 
 	bool isThreefoldRepetition(ZobristKey* keyHistory, int currentPly);
 	bool isFiftyMoveDraw(int fiftyMoveCounter);
+	bool isDraw(Board* boardPtr);
 };

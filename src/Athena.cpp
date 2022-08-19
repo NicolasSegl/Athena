@@ -410,8 +410,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 {
     // OR INSUFFICIENT MATERIAL DRAW
     // simplify it all to an isDraw function
-    //if (Outcomes::isThreefoldRepetition(boardPtr->getZobristKeyHistory(), boardPtr->getCurrentPly()) || Outcomes::isFiftyMoveDraw(boardPtr->getFiftyMoveCounter()))
-    //    return 0;
+    if (Outcomes::isDraw(boardPtr))
+        return 0;
 
     if (depth <= 0)
         return quietMoveSearch(side, alpha, beta, ply);

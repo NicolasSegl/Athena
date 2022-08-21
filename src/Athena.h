@@ -37,7 +37,6 @@ private:
     PieceTypes getPieceType(Bitboard* pieceBB);
     int getPieceValue(PieceTypes pieceType);
     int pieceValueTo_MVV_LVA_Index(int value);
-    int see(Byte square, Colour attackingSide, int currentSquareValue);
     
     MoveData** mKillerMoves;
     void insertKillerMove(MoveData& move, Byte ply);
@@ -50,25 +49,17 @@ private:
 	int mDepth;
     Colour mSide;
     MoveData mMoveToMake;
-    bool mActive = false;
 
     int mNodes;
     int mMaxPly;
     Board* boardPtr;
     
-    int getScoreRelativeToSide(int score, Colour side) { return score * (1 - 2 * (Byte)side); }
-    float getMidgameValue(Bitboard occupiedBB);
-
     int negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool canNullMove = true);
     int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 
     void assignMoveScores(std::vector<MoveData>& moves, Byte ply);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
     int calculateExtension(Colour side, Byte kingSquare);
-
-    int evaluatePawnValue(int square, Bitboard pawnBB);
-    int evaluatePosition(float midgameValue);
-    
     
 public:
     Athena();
@@ -78,9 +69,5 @@ public:
 
 	void setDepth(int newDepth) { mDepth = newDepth; }
     void setColour(Colour side) { mSide = side;      }
-    void activate()             { mActive = true;    }
-    void deactiveate()          { mActive = false;   }
-    
-    bool isActive ()            { return mActive;    }
     Colour getColour()          { return mSide;      }
 };

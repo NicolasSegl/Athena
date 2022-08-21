@@ -70,24 +70,30 @@ namespace Eval
                 continue;
 
             // consider piece value and piece square table
-            if (BB::boardSquares[square] & boardPtr->currentPosition.whitePawnsBB)
+            if (BB::boardSquares[square] & boardPtr->currentPosition.whitePiecesBB)
             {
-                whiteEval += PAWN_VALUE + pst::pawnTable[63 - square] + evaluatePawnValue(square, boardPtr->currentPosition.whitePawnsBB);
+                if (BB::boardSquares[square] & boardPtr->currentPosition.whitePawnsBB)
+                {
+                    whiteEval += PAWN_VALUE + pst::pawnTable[63 - square] + evaluatePawnValue(square, boardPtr->currentPosition.whitePawnsBB);
+                }
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKingBB)
+                    // so a pawn hash table is just a transposition table but for pawn structures??
+                    whiteEval += KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
             }
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKingBB)
-                // so a pawn hash table is just a transposition table but for pawn structures??
-                whiteEval += KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.blackPawnsBB)   blackEval += PAWN_VALUE + pst::pawnTable[square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
-            else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKingBB)
-                blackEval += KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
+            else // piece is black
+            {
+                if (BB::boardSquares[square] & boardPtr->currentPosition.blackPawnsBB)   blackEval += PAWN_VALUE + pst::pawnTable[square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
+                else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKingBB)
+                    blackEval += KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
+            }
         }
         
         return whiteEval - blackEval;

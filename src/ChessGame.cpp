@@ -6,7 +6,6 @@
 void ChessGame::init()
 {
 	mBoard.init();
-	mAthena.activate();
 }
 
 std::string ChessGame::findBestMove(Colour side, float timeToMove)

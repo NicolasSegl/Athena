@@ -19,20 +19,15 @@ namespace Eval
     // calculates the value of a pawn based on its structure
     int evaluatePawnValue(int square, Bitboard pawnsBB)
     {
-        
         int structureEval = 0;
-
-        //else // if blocked by a piece that is not a pawn
-
-        // blocked pawn penalty
-        //if ()
-
+        
         // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
-        if ((~BB::rankClear[square / 8] ^ BB::boardSquares[square]) & pawnsBB)
+        if ((~BB::fileClear[square % 8] & ~BB::boardSquares[square]) & pawnsBB)
             structureEval -= 10;
 
         // isolated pawns
-        bool isolatedLeftFile = true, isolatedRightFile = true;
+        // i can speed this up
+       /* bool isolatedLeftFile = true, isolatedRightFile = true;
 
         if ((square % 8) - 1 < 0) // if the pawn is not on the a file
             if (~BB::fileClear[square % 8 - 1] & pawnsBB) // if there is a pawn on the file to the left
@@ -55,8 +50,8 @@ namespace Eval
 
         // backward pawns
         
-
-         return 0;
+*/
+        return structureEval;
     }
 
     int evaluatePosition(Board* boardPtr, float midgameValue)
@@ -73,9 +68,7 @@ namespace Eval
             if (BB::boardSquares[square] & boardPtr->currentPosition.whitePiecesBB)
             {
                 if (BB::boardSquares[square] & boardPtr->currentPosition.whitePawnsBB)
-                {
-                    whiteEval += PAWN_VALUE + pst::pawnTable[63 - square] + evaluatePawnValue(square, boardPtr->currentPosition.whitePawnsBB);
-                }
+                    whiteEval += evaluatePawnValue(square, boardPtr->currentPosition.whitePawnsBB);// + PAWN_VALUE + pst::pawnTable[63 - square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square];

@@ -6,6 +6,7 @@
 #include "Athena.h"
 #include "Bitboard.h"
 #include "Board.h"
+#include "Eval.h"
 #include "MoveData.h"
 
 // maybe abstract this into more classes after it starts working
@@ -24,4 +25,5 @@ public:
 	std::string findBestMove(Colour side, float timeToMove);
 	void makeMoveLAN(const std::string& lanString);
 	Colour getSideToMove() { return mBoard.currentPosition.sideToMove; }
+    int getBoardEval() { return Eval::evaluatePosition(&mBoard, Eval::getMidgameValue(mBoard.currentPosition.occupiedBB)); }
 };

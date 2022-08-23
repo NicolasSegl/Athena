@@ -86,6 +86,8 @@ void UCI::processCommand(const std::string& commandString)
 		respondGo(commandVec);
 	else if (commandVec[0] == "quit")
 		exit(0);
+    else if (commandVec[0] == "eval") // temporary debugging function used to test the current evaluation of the board
+        std::cout << mCG.getBoardEval() << std::endl;
 	//else if (commandVec[0] == "ucinewgame")
 	//	respondIsReady();
 }

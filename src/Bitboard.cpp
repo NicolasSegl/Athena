@@ -5,23 +5,32 @@
 
 namespace BB
 {
-    extern Bitboard boardSquares[64] { 0 };
-    extern Bitboard fileClear[8]     { 0 };
-    extern Bitboard rankClear[8]     { 0 };
     extern Bitboard adjacentFiles[8] { 0 };
+    extern Bitboard boardSquares[64] { 0 };
+
+    extern Bitboard fileClear[8]     { 0 };
+    extern Bitboard fileMask[8]      { 0 };
+
+    extern Bitboard rankClear[8]     { 0 };
+    extern Bitboard rankMask[8]      { 0 };
 
     void initFileRankMasks()
     {
+        // i representing the rank and array index
         for (int i = 0; i < 8; i++)
         {
             // intentional overflow making fileClear[i]'s and rankClear[i]'s bits all set to 1
             fileClear[i] = (Bitboard)(-1);
             rankClear[i] = (Bitboard)(-1);
 
+            // j representatins the file
             for (int j = 0; j < 8; j++)
             {
                 fileClear[i] ^= (Bitboard)1 << j * 8 + i;
+                fileMask[i]  |= (Bitboard)1 << j * 8 + i;
+                
                 rankClear[i] ^= (Bitboard)1 << i * 8 + j;
+                rankMask[i]  |= (Bitboard)1 << i * 8 + j;
             }
         }
     }

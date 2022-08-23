@@ -109,14 +109,14 @@ Bitboard MoveGenerator::computePseudoPawnMoves(Byte fromSquare, Colour side, Bit
 	{
 		Bitboard oneStepBB = (BB::boardSquares[fromSquare] << 8) & emptyBB;
 		// if the twostep is on the fourth rank, it would mean the pawn was on its home row
-		Bitboard twoStepBB = ((oneStepBB << 8) & ~BB::rankClear[BB::RANK_FOURTH]) & emptyBB;
+		Bitboard twoStepBB = ((oneStepBB << 8) & BB::rankMask[BB::RANK_FOURTH]) & emptyBB;
 		movesBB |= oneStepBB | twoStepBB;
 	}
 	else if (side == SIDE_BLACK)
 	{
 		Bitboard oneStepBB = (BB::boardSquares[fromSquare] >> 8) & emptyBB;
 		// if the twostep is on the fifth rank, it would mean the pawn was on its home row
-		Bitboard twoStepBB = ((oneStepBB >> 8) & ~BB::rankClear[BB::RANK_FIFTH]) & emptyBB;
+		Bitboard twoStepBB = ((oneStepBB >> 8) & BB::rankMask[BB::RANK_FIFTH]) & emptyBB;
 		movesBB |= oneStepBB | twoStepBB;
 	}
 

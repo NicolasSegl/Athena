@@ -50,7 +50,7 @@ namespace Eval
             if (BB::boardSquares[square] & friendlyPawnsBB)
             {
                 // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
-                if ((~BB::fileClear[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
+                if ((BB::fileMask[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
                     structureEval -= 10;
 
                 // isolated pawns
@@ -65,7 +65,7 @@ namespace Eval
                 
                 // test speed up when using file/rank masks instead of ~file or rank clears
                 // passed pawns
-                if (!((BB::adjacentFiles[square % 8] | ~BB::fileClear[square % 8]) & enemyPawnsBB))
+                if (!((BB::adjacentFiles[square % 8] | BB::fileMask[square % 8]) & enemyPawnsBB))
                     structureEval += 50;
             }
         }

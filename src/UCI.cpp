@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include "Constants.h"
+#include "Eval.h"
 #include "UCI.h"
 #include "utils.h"
 
@@ -24,6 +25,7 @@ void UCI::respondUCI()
 void UCI::respondIsReady()
 {
 	initBitsSetTable();
+    Eval::initPawnHashTable();
 	std::cout << "readyok\n";
 }
 

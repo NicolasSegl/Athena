@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Bitboard.h"
 #include "DataTypes.h"
 
 class Board;
@@ -15,9 +16,11 @@ namespace Eval
     const int PAWN_VALUE = 100;
 
     int evaluateBoardRelativeTo(Colour side, int eval);
-    int evaluatePawnValue(int square, Bitboard pawnsBB);
+    int evaluatePawnStructure(Bitboard pawnsBB);
     int evaluatePosition(Board* boardPtr, float midgameValue);
 
     float getMidgameValue(Bitboard occupiedBB);
     int see(Board* boardPtr, Byte square, Colour attackingSide, int currentSquareValue);
+    
+    void initPawnHashTable();
 }

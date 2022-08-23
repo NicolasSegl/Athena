@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Bitboard.h"
 #include "Board.h"
 #include "Eval.h"
@@ -17,39 +19,67 @@ namespace Eval
         return countSetBits64(occupiedBB)/32.f; // 32 = number of total pieces possible
     }
 
-    // calculates the value of a pawn based on its structure
-    int evaluatePawnValue(int square, Bitboard pawnsBB)
+    struct PawnHashTableEntry
     {
-        int structureEval = 0;
-        
-        // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
-        if ((~BB::fileClear[square % 8] & ~BB::boardSquares[square]) & pawnsBB)
-            structureEval -= 10;
+        int structureEval;
+        Bitboard pawnsBB = 0;
+    };
 
-        // isolated pawns
-        if (!(BB::adjacentFiles[square % 8] & pawnsBB))
-            structureEval -= 20;
+    PawnHashTableEntry* pawnHashTable;
+    const int PAWN_HASH_TABLE_SIZE = 1000000;
+    void initPawnHashTable()
+    {
+        pawnHashTable = new PawnHashTableEntry[PAWN_HASH_TABLE_SIZE];
+    }
+
+    // calculates the value of a pawn based on its structure
+    int evaluatePawnStructure(Bitboard pawnsBB)
+    {
+        if (!pawnsBB)
+            return 0;
         
-        // if the pawn is not isolated, it may be backwards
-        else
+        // if there is an entry with the same
+        int hashEntryIndex = pawnsBB % PAWN_HASH_TABLE_SIZE;
+        if (pawnHashTable[hashEntryIndex].pawnsBB == pawnsBB)
+            return pawnHashTable[hashEntryIndex].structureEval;
+
+        int structureEval = 0;
+        for (int square = 0; square < 64; square++)
         {
-            // if the pawn is BEHIND (higher/lower rank) than
-            //if (side == SIDE_WHITE)
-             //   if (BB::boardSquares[square] < )
+            if (BB::boardSquares[square] & pawnsBB)
+            {
+                // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
+                if ((~BB::fileClear[square % 8] & ~BB::boardSquares[square]) & pawnsBB)
+                    structureEval -= 10;
+
+                // isolated pawns
+                if (!(BB::adjacentFiles[square % 8] & pawnsBB))
+                    structureEval -= 20;
+                
+                // if the pawn is not isolated, it may be backwards
+                else
+                {
+                    // if the pawn is BEHIND (higher/lower rank) than
+                    //if (side == SIDE_WHITE)
+                     //   if (BB::boardSquares[square] < )
+                }
+                
+                // make a table of adjacent files for this purpose in Bitboard.h
+
+                // backward pawns
+            }
         }
         
-        // make a table of adjacent files for this purpose in Bitboard.h
-
-        // backward pawns
-        
+        pawnHashTable[hashEntryIndex].pawnsBB          = pawnsBB;
+        pawnHashTable[hashEntryIndex].structureEval    = structureEval;
 
         return structureEval;
     }
 
     int evaluatePosition(Board* boardPtr, float midgameValue)
     {
-        int whiteEval = 0;
-        int blackEval = 0;
+        int whiteEval = evaluatePawnStructure(boardPtr->currentPosition.whitePawnsBB) ;
+        int blackEval = evaluatePawnStructure(boardPtr->currentPosition.blackPawnsBB);
         
         for (int square = 0; square < 64; square++)
         {
@@ -60,7 +90,7 @@ namespace Eval
             if (BB::boardSquares[square] & boardPtr->currentPosition.whitePiecesBB)
             {
                 if (BB::boardSquares[square] & boardPtr->currentPosition.whitePawnsBB)
-                    whiteEval += evaluatePawnValue(square, boardPtr->currentPosition.whitePawnsBB);// + PAWN_VALUE + pst::pawnTable[63 - square];
+                    whiteEval += PAWN_VALUE + pst::pawnTable[63 - square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square];
@@ -71,7 +101,7 @@ namespace Eval
             }
             else // piece is black
             {
-                if (BB::boardSquares[square] & boardPtr->currentPosition.blackPawnsBB)   blackEval += PAWN_VALUE + pst::pawnTable[square];
+                if (BB::boardSquares[square] & boardPtr->currentPosition.blackPawnsBB) blackEval += PAWN_VALUE + pst::pawnTable[square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
                 else if (BB::boardSquares[square] & boardPtr->currentPosition.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square];

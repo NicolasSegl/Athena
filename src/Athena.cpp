@@ -299,16 +299,22 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
     if (depth <= 0)
         return quietMoveSearch(side, alpha, beta, ply);
-
-    // null moves are not allowed if:
-    // the side to move being in check
-    // the position is in the endgame
-    // the previous move was a null move (canNullMove flag)
-    // it's the first move of the search
-    Byte kingSquare = boardPtr->computeKingSquare(side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB);
-    if (kingSquare == 255) // if there is no friendly king on the board, then return a huge negative value
-        return -100000;
     
+    Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
+    
+    // if for whatever reason the side to play has no king, return a huge negative value
+    if (!kingBB)
+        return -100000;
+
+    Byte kingSquare = boardPtr->computeKingSquare(kingBB);
+    
+    /*
+     null moves are not allowed if:
+        the side to move being in check
+        the position is in the endgame
+        the previous move was a null move (canNullMove flag)
+        it's the first move of the search
+    */
     if (canNullMove && Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB) > 0.3 && !boardPtr->squareAttacked(kingSquare, !side) && ply != 0)
     {
         // R = 2. hence the - 2

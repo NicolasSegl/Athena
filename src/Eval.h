@@ -16,7 +16,6 @@ namespace Eval
     const int PAWN_VALUE = 100;
 
     int evaluateBoardRelativeTo(Colour side, int eval);
-    int evaluatePawnStructure(Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB);
     int evaluatePosition(Board* boardPtr, float midgameValue);
 
     float getMidgameValue(Bitboard occupiedBB);

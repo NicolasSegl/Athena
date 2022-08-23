@@ -12,6 +12,7 @@
 class ChessGame
 {
 private:
+    bool mCheckOpeningBook;
 	Board mBoard;
     Athena mAthena;
 	std::vector<std::string> mLANStringHistory;

@@ -33,44 +33,44 @@ namespace Eval
     }
 
     // calculates the value of a pawn based on its structure
-    int evaluatePawnStructure(Bitboard pawnsBB)
+    int evaluatePawnStructure(Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB)
     {
-        if (!pawnsBB)
+        if (!friendlyPawnsBB)
             return 0;
         
         // if there is an entry with the same
-        int hashEntryIndex = pawnsBB % PAWN_HASH_TABLE_SIZE;
-        if (pawnHashTable[hashEntryIndex].pawnsBB == pawnsBB)
+        int hashEntryIndex = friendlyPawnsBB % PAWN_HASH_TABLE_SIZE;
+        static int counter = 0 ;
+        if (pawnHashTable[hashEntryIndex].pawnsBB == friendlyPawnsBB)
             return pawnHashTable[hashEntryIndex].structureEval;
 
         int structureEval = 0;
         for (int square = 0; square < 64; square++)
         {
-            if (BB::boardSquares[square] & pawnsBB)
+            if (BB::boardSquares[square] & friendlyPawnsBB)
             {
                 // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
-                if ((~BB::fileClear[square % 8] & ~BB::boardSquares[square]) & pawnsBB)
+                if ((~BB::fileClear[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
                     structureEval -= 10;
 
                 // isolated pawns
-                if (!(BB::adjacentFiles[square % 8] & pawnsBB))
+                if (!(BB::adjacentFiles[square % 8] & friendlyPawnsBB))
                     structureEval -= 20;
-                
                 // if the pawn is not isolated, it may be backwards
                 else
                 {
-                    // if the pawn is BEHIND (higher/lower rank) than
-                    //if (side == SIDE_WHITE)
-                     //   if (BB::boardSquares[square] < )
+                    // if the adjacent pawns are a rank ahead of the considered pawn
+                    // AND the pawn cannot move up, 
                 }
                 
-                // make a table of adjacent files for this purpose in Bitboard.h
-
-                // backward pawns
+                // test speed up when using file/rank masks instead of ~file or rank clears
+                // passed pawns
+                if (!((BB::adjacentFiles[square % 8] | ~BB::fileClear[square % 8]) & enemyPawnsBB))
+                    structureEval += 50;
             }
         }
         
-        pawnHashTable[hashEntryIndex].pawnsBB          = pawnsBB;
+        pawnHashTable[hashEntryIndex].pawnsBB          = friendlyPawnsBB;
         pawnHashTable[hashEntryIndex].structureEval    = structureEval;
 
         return structureEval;
@@ -78,8 +78,8 @@ namespace Eval
 
     int evaluatePosition(Board* boardPtr, float midgameValue)
     {
-        int whiteEval = evaluatePawnStructure(boardPtr->currentPosition.whitePawnsBB) ;
-        int blackEval = evaluatePawnStructure(boardPtr->currentPosition.blackPawnsBB);
+        int whiteEval = evaluatePawnStructure(boardPtr->currentPosition.whitePawnsBB, boardPtr->currentPosition.blackPawnsBB);
+        int blackEval = evaluatePawnStructure(boardPtr->currentPosition.blackPawnsBB, boardPtr->currentPosition.whitePawnsBB);
         
         for (int square = 0; square < 64; square++)
         {

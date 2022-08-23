@@ -13,7 +13,8 @@ namespace Eval
     }
 
     float getMidgameValue(Bitboard occupiedBB)
-    {     return countSetBits64(occupiedBB)/32.f; // 32 = number of total pieces possible
+    {
+        return countSetBits64(occupiedBB)/32.f; // 32 = number of total pieces possible
     }
 
     // calculates the value of a pawn based on its structure
@@ -26,20 +27,9 @@ namespace Eval
             structureEval -= 10;
 
         // isolated pawns
-        // i can speed this up
-       /* bool isolatedLeftFile = true, isolatedRightFile = true;
-
-        if ((square % 8) - 1 < 0) // if the pawn is not on the a file
-            if (~BB::fileClear[square % 8 - 1] & pawnsBB) // if there is a pawn on the file to the left
-                isolatedLeftFile = false;
-
-        if (isolatedLeftFile) // if the file to the left has no pawn, then check the right file
-            if ((square % 8) + 1 > 7) // if the pawn is not on the h file
-                if (~BB::fileClear[square % 8 + 1] & pawnsBB) // if there is a pawn on the adjacent right file
-                    isolatedRightFile = false;
-
-        if (isolatedRightFile && isolatedLeftFile)
+        if (!(BB::adjacentFiles[square % 8] & pawnsBB))
             structureEval -= 20;
+        
         // if the pawn is not isolated, it may be backwards
         else
         {
@@ -47,10 +37,12 @@ namespace Eval
             //if (side == SIDE_WHITE)
              //   if (BB::boardSquares[square] < )
         }
+        
+        // make a table of adjacent files for this purpose in Bitboard.h
 
         // backward pawns
         
-*/
+
         return structureEval;
     }
 

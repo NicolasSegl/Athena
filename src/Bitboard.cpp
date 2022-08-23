@@ -5,11 +5,12 @@
 
 namespace BB
 {
-    extern Bitboard boardSquares[64]	          { 0 };
-    extern Bitboard fileClear[8]		          { 0 };
-    extern Bitboard rankClear[8]		          { 0 };
+    extern Bitboard boardSquares[64] { 0 };
+    extern Bitboard fileClear[8]     { 0 };
+    extern Bitboard rankClear[8]     { 0 };
+    extern Bitboard adjacentFiles[8] { 0 };
 
-    void initializeFileRankMasks()
+    void initFileRankMasks()
     {
         for (int i = 0; i < 8; i++)
         {
@@ -22,6 +23,15 @@ namespace BB
                 fileClear[i] ^= (Bitboard)1 << j * 8 + i;
                 rankClear[i] ^= (Bitboard)1 << i * 8 + j;
             }
+        }
+    }
+
+    void initAdjacentFilesBitboards()
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            if (i > 0) adjacentFiles[i] |= fileClear[i - 1];
+            if (i < 7) adjacentFiles[i] |= fileClear[i + 1];
         }
     }
 
@@ -54,7 +64,8 @@ namespace BB
 
     void initialize()
     {
-        initializeFileRankMasks();
+        initFileRankMasks();
+        initAdjacentFilesBitboards();
         
         for (int square = 0; square < 64; square++)
             boardSquares[square] = (Bitboard)1 << square;

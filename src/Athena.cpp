@@ -379,7 +379,6 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 
     std::vector<MoveData> moves;
     boardPtr->calculateSideMovesCapturesOnly(side, moves);
-    //std::vector<MoveData> moves = boardPtr->getMovesRef(side);
     assignMoveScores(moves, ply);
 
     for (int i = 0; i < moves.size(); i++)
@@ -416,11 +415,13 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
     if (depth <= 0)
         return quietMoveSearch(side, alpha, beta, ply);
 
-    // null moves are not allowed if:
-    // the side to move being in check
-    // the position is in the endgame
-    // the previous move was a null move (canNullMove flag)
-    // it's the first move of the search
+    /* 
+    null moves are not allowed if:
+        the side to move being in check
+        the position is in the endgame
+        the previous move was a null move (canNullMove flag)
+        it's the first move of the search
+    */
     Byte kingSquare = boardPtr->computeKingSquare(side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB);
     if (canNullMove && getMidgameValue(boardPtr->currentPosition.occupiedBB) > 0.3 && !boardPtr->squareAttacked(kingSquare, !side) && ply != 0)
     {
@@ -439,7 +440,6 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
     std::vector<MoveData> moves;
     boardPtr->calculateSideMoves(side, moves);
-    //std::vector<MoveData> moves = boardPtr->getMovesRef(side);
 
     int maxEval = -INF;
     assignMoveScores(moves, ply);

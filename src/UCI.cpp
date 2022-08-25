@@ -3,6 +3,7 @@
 
 #include "Constants.h"
 #include "Eval.h"
+#include "MoveGeneration.h"
 #include "UCI.h"
 #include "utils.h"
 
@@ -24,6 +25,7 @@ void UCI::respondUCI()
 // response to "isready" command
 void UCI::respondIsReady()
 {
+	MoveGeneration::init();
 	initBitsSetTable();
     Eval::initPawnHashTable();
 	std::cout << "readyok\n";

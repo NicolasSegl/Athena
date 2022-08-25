@@ -3,6 +3,7 @@
 #include "Bitboard.h"
 #include "Board.h"
 #include "Eval.h"
+#include "MoveGeneration.h"
 #include "SquarePieceTables.h"
 #include "utils.h"
 
@@ -32,9 +33,9 @@ namespace Eval
         pawnHashTable = new PawnHashTableEntry[PAWN_HASH_TABLE_SIZE];
     }
 
-const int DOUBLE_PAWN_PENALTY   = 10;
-const int ISOLATED_PAWN_PENALTY = 20;
-const int PASSED_PAWN_BONUS     = 30;
+    const int DOUBLE_PAWN_PENALTY   = 10;
+    const int ISOLATED_PAWN_PENALTY = 20;
+    const int PASSED_PAWN_BONUS     = 30;
     // calculates the value of a pawn based on its structure
     int evaluatePawnStructure(Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB)
     {
@@ -83,21 +84,23 @@ const int PASSED_PAWN_BONUS     = 30;
 
     const int ROOK_OPEN_FILE_BONUS      = 30;
     const int ROOK_HALF_OPEN_FILE_BONUS = 20;
-    inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB)//, Bitboard friendlyRooksBB)
+    inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB, Bitboard friendlyRooksBB)
     {
         Bitboard bitsSetInFile = BB::fileMask[square % 8] & ~BB::boardSquares[square];
+        int value = 0;
+
+        // rooks are connected
+        if (MoveGeneration::computePseudoRookMoves(square, friendlyPiecesBB | enemyPiecesBB, friendlyPiecesBB) & friendlyRooksBB)
+            value += 10;
         
         // open file
         if (!(bitsSetInFile & occupiedBB))
-            return ROOK_OPEN_FILE_BONUS;
+            value += ROOK_OPEN_FILE_BONUS;
         else // potentially a half-open file
             if ((bitsSetInFile & friendlyPiecesBB) && !(bitsSetInFile & enemyPiecesBB))
-                return ROOK_HALF_OPEN_FILE_BONUS;
+                value += ROOK_HALF_OPEN_FILE_BONUS;
 
-        // rooks are connected
-        //if ()
-        
-        return 0;
+        return value;
     }
 
     int evaluatePosition(Board* boardPtr, float midgameValue)
@@ -119,7 +122,7 @@ const int PASSED_PAWN_BONUS     = 30;
                     whiteEval += PAWN_VALUE + pst::pawnTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
-                else if (BB::boardSquares[square] & position.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square] + rookStructureValue(square, position.occupiedBB, position.whitePiecesBB, position.blackPiecesBB);
+                else if (BB::boardSquares[square] & position.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square] + rookStructureValue(square, position.occupiedBB, position.whitePiecesBB, position.blackPiecesBB, position.whiteRooksBB);
                 else if (BB::boardSquares[square] & position.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteKingBB)
                     // so a pawn hash table is just a transposition table but for pawn structures??
@@ -130,7 +133,7 @@ const int PASSED_PAWN_BONUS     = 30;
                 if (BB::boardSquares[square] & position.blackPawnsBB) blackEval += PAWN_VALUE + pst::pawnTable[square];
                 else if (BB::boardSquares[square] & position.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
                 else if (BB::boardSquares[square] & position.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
-                else if (BB::boardSquares[square] & position.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square] + rookStructureValue(square, position.occupiedBB, position.blackPiecesBB, position.whitePiecesBB);
+                else if (BB::boardSquares[square] & position.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square] + rookStructureValue(square, position.occupiedBB, position.blackPiecesBB, position.whitePiecesBB, position.blackRooksBB);
                 else if (BB::boardSquares[square] & position.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
                 else if (BB::boardSquares[square] & position.blackKingBB)
                     blackEval += KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);

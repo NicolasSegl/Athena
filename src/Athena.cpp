@@ -262,8 +262,7 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
         return alpha;
 
     std::vector<MoveData> moves;
-    boardPtr->calculateSideMovesCapturesOnly(side, moves);
-    //std::vector<MoveData> moves = boardPtr->getMovesRef(side);
+    MoveGeneration::calculateSideMoves(boardPtr, side, moves, true);
     assignMoveScores(moves, ply);
 
     for (int i = 0; i < moves.size(); i++)
@@ -331,8 +330,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
     int ogAlpha = alpha; 
 
     std::vector<MoveData> moves;
-    boardPtr->calculateSideMoves(side, moves);
-    //std::vector<MoveData> moves = boardPtr->getMovesRef(side);
+    MoveGeneration::calculateSideMoves(boardPtr, side, moves, false);
 
     int maxEval = -INF;
     assignMoveScores(moves, ply);

@@ -78,12 +78,12 @@ const int PASSED_PAWN_BONUS     = 30;
         return structureEval;
     }
 
-// scale this value using the midgame value
-int kingStructureValue() {}
+    // scale this value using the midgame value
+    int kingStructureValue() { return 5; }
 
     const int ROOK_OPEN_FILE_BONUS      = 30;
     const int ROOK_HALF_OPEN_FILE_BONUS = 20;
-    inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB)
+    inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB)//, Bitboard friendlyRooksBB)
     {
         Bitboard bitsSetInFile = BB::fileMask[square % 8] & ~BB::boardSquares[square];
         
@@ -93,6 +93,9 @@ int kingStructureValue() {}
         else // potentially a half-open file
             if ((bitsSetInFile & friendlyPiecesBB) && !(bitsSetInFile & enemyPiecesBB))
                 return ROOK_HALF_OPEN_FILE_BONUS;
+
+        // rooks are connected
+        //if ()
         
         return 0;
     }

@@ -139,7 +139,7 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set the current ply
 	mPly += 2 * std::stoi(dataVec[FenDataFields::NUM_FULL_MOVES]);
 
-	insertMoveIntoHistory(mPly--);
+	insertMoveIntoHistory(mPly);
 
 	setAuxillaryBitboards();
 }
@@ -205,8 +205,6 @@ void Board::init()
 
 	mZobristKeyGenerator.initHashKeys();
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
-	mPly = 0; // so that the initial position inserted into the zobirst key history has an index of 0
-	insertMoveIntoHistory(mPly++);
 }
 
 // calls MoveGenerator to calculate all possible moves for the given side (putting them in a reference vector of Board::whiteMoves or board::blackMoves)

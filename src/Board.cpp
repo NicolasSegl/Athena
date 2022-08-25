@@ -3,7 +3,7 @@
 #include <random>
 
 #include "Board.h"
-#include "MoveGenerator.h"
+#include "MoveGeneration.h"
 #include "Outcomes.h"
 #include "utils.h"
 
@@ -139,7 +139,7 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set the current ply
 	mPly += 2 * std::stoi(dataVec[FenDataFields::NUM_FULL_MOVES]);
 
-	insertMoveIntoHistory(mPly--);
+	insertMoveIntoHistory(mPly);
 
 	setAuxillaryBitboards();
 }
@@ -156,9 +156,9 @@ bool Board::makeMoveLAN(const std::string& lanString)
 	Byte moveTargetSquare = getSquareNumberCoordinate(to);
 
 	std::vector<MoveData> moveVec;
-	mMoveGenerator.calculatePieceMoves(this, currentPosition.sideToMove, moveOriginSquare, moveVec, false);
+	MoveGeneration::calculatePieceMoves(this, currentPosition.sideToMove, moveOriginSquare, moveVec, false);
 	if (from == "e1" || from == "e8")
-		mMoveGenerator.calculateCastleMoves(this, currentPosition.sideToMove, moveVec);
+		MoveGeneration::calculateCastleMoves(this, currentPosition.sideToMove, moveVec);
 
 	for (int i = 0; i < moveVec.size(); i++)
 		// compare the origin/target squares of the move provided with the origin/target squares of the possible moves at that square (plus potential castle moves)
@@ -201,24 +201,10 @@ std::string Board::getMoveLANString(MoveData* moveData)
 void Board::init()
 {
 	BB::initialize();
-	mMoveGenerator.init();
+	MoveGeneration::init();
 
 	mZobristKeyGenerator.initHashKeys();
 	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
-	mPly = 0; // so that the initial position inserted into the zobirst key history has an index of 0
-	insertMoveIntoHistory(mPly++);
-}
-
-// calls MoveGenerator to calculate all possible moves for the given side (putting them in a reference vector of Board::whiteMoves or board::blackMoves)
-void Board::calculateSideMoves(Colour side, std::vector<MoveData>& moveVec)
-{
-    mMoveGenerator.calculateSideMoves(this, side, moveVec);
-}
-
-// calls MoveGenerator to calculate all possible capture moves for the given side (putting them in a reference vector of Board::whiteMoves or board::blackMoves)
-void Board::calculateSideMovesCapturesOnly(Colour side, std::vector<MoveData>& moveVec)
-{
-	mMoveGenerator.calculateSideMoves(this, side, moveVec, true);
 }
 
 // set the basic move data (origin/target square, colour bitboard, and piece bitboard) of the two moves made during a castle move
@@ -372,19 +358,19 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 	}
     
     Bitboard opKnightsBB = attackingSide == SIDE_WHITE ? currentPosition.whiteKnightsBB : currentPosition.blackKnightsBB;
-    if (mMoveGenerator.knightLookupTable[square] & opKnightsBB)                  return true;
+    if (MoveGeneration::knightLookupTable[square] & opKnightsBB)                  return true;
     
     Bitboard opKingsBB = attackingSide    == SIDE_WHITE ? currentPosition.whiteKingBB : currentPosition.blackKingBB;
-    if (mMoveGenerator.kingLookupTable[square] & opKingsBB)                      return true;
+    if (MoveGeneration::kingLookupTable[square] & opKingsBB)                      return true;
     
     Bitboard opBishopsQueensBB = attackingSide == SIDE_WHITE ? currentPosition.whiteBishopsBB | currentPosition.whiteQueensBB  
 															 : currentPosition.blackBishopsBB | currentPosition.blackQueensBB;
     Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? currentPosition.blackPiecesBB : currentPosition.whitePiecesBB;
-    if (mMoveGenerator.computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces) & opBishopsQueensBB) return true;
+    if (MoveGeneration::computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces) & opBishopsQueensBB) return true;
     
     Bitboard opRooksQueens = attackingSide == SIDE_WHITE ? currentPosition.whiteRooksBB | currentPosition.whiteQueensBB  
 														 : currentPosition.blackRooksBB | currentPosition.blackQueensBB;
-    if (mMoveGenerator.computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces) & opRooksQueens) return true;
+    if (MoveGeneration::computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces) & opRooksQueens) return true;
     
     return false;
 }
@@ -421,7 +407,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 
 	Bitboard* opKnightsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteKnightsBB : &currentPosition.blackKnightsBB;
-	*pieceAttacksBB = mMoveGenerator.knightLookupTable[square] & *opKnightsBB;
+	*pieceAttacksBB = MoveGeneration::knightLookupTable[square] & *opKnightsBB;
 	if (*pieceAttacksBB)
 	{
 		*pieceValue = 320;
@@ -432,7 +418,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	Bitboard friendlyPieces = attackingSide == SIDE_WHITE ? currentPosition.blackPiecesBB : currentPosition.whitePiecesBB;
 
 	Bitboard* opBishopsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteBishopsBB : &currentPosition.blackBishopsBB;
-	Bitboard bishopMovesBB = mMoveGenerator.computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces);
+	Bitboard bishopMovesBB = MoveGeneration::computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces);
 	*pieceAttacksBB = bishopMovesBB & *opBishopsBB;
 	if (*pieceAttacksBB)
 	{
@@ -442,7 +428,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 
 	Bitboard* opRooks = attackingSide == SIDE_WHITE ? &currentPosition.whiteRooksBB : &currentPosition.blackRooksBB;
-	Bitboard rookMovesBB = mMoveGenerator.computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces);
+	Bitboard rookMovesBB = MoveGeneration::computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces);
 	*pieceAttacksBB = rookMovesBB & *opRooks;
 	if (*pieceAttacksBB)
 	{
@@ -461,7 +447,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 
 	Bitboard* opKingsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteKingBB : &currentPosition.blackKingBB;
-	*pieceAttacksBB = mMoveGenerator.kingLookupTable[square] & *opKingsBB;
+	*pieceAttacksBB = MoveGeneration::kingLookupTable[square] & *opKingsBB;
 	if (*pieceAttacksBB)
 	{
 		*pieceValue = 20000;

@@ -1,6 +1,9 @@
 #include <iostream>
 #include <sstream>
 
+#include "Constants.h"
+#include "Eval.h"
+#include "MoveGeneration.h"
 #include "UCI.h"
 #include "utils.h"
 
@@ -22,7 +25,9 @@ void UCI::respondUCI()
 // response to "isready" command
 void UCI::respondIsReady()
 {
+	MoveGeneration::init();
 	initBitsSetTable();
+    Eval::initPawnHashTable();
 	std::cout << "readyok\n";
 }
 
@@ -34,7 +39,7 @@ void UCI::respondPosition(const std::vector<std::string>& commandVec)
 	int movesCommandIndex = 3;
 
 	if (commandVec[1] == "startpos") // index of 1 is the start of the FEN string
-		mCG.setPositionFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		mCG.setPositionFEN(FEN_STARTING_STRING);
 	else
 	{
 		std::string fenString = "";
@@ -85,6 +90,8 @@ void UCI::processCommand(const std::string& commandString)
 		respondGo(commandVec);
 	else if (commandVec[0] == "quit")
 		exit(0);
+    else if (commandVec[0] == "eval") // temporary debugging function used to test the current evaluation of the board
+        std::cout << mCG.getBoardEval() << std::endl;
 	//else if (commandVec[0] == "ucinewgame")
 	//	respondIsReady();
 }

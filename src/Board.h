@@ -6,7 +6,7 @@
 #include "Bitboard.h"
 #include "ChessPosition.h"
 #include "MoveData.h"
-#include "MoveGenerator.h"
+#include "MoveGeneration.h"
 #include "ZobristKeyGenerator.h"
 
 class Board
@@ -14,8 +14,6 @@ class Board
 private:
 	std::vector<MoveData> mWhiteMoves;
 	std::vector<MoveData> mBlackMoves;
-
-    MoveGenerator mMoveGenerator;
 
 	uint64_t mCurrentZobristKey;
 	ZobristKeyGenerator mZobristKeyGenerator;
@@ -57,10 +55,6 @@ public:
 	bool makeMove(MoveData* moveData);
 	bool unmakeMove(MoveData* moveData, bool positionUpdated = true);
 	void promotePiece(MoveData* md, MoveData::EncodingBits promoteTo);
-
-	// fetching moves for a side from MoveGenerator
-	void calculateSideMoves(Colour side, std::vector<MoveData>& moveVec);
-	void calculateSideMovesCapturesOnly(Colour side, std::vector<MoveData>& moveVec);
 	
 	Byte computeKingSquare(Bitboard kingBB);
 	bool squareAttacked(Byte square, Colour attackingSide);

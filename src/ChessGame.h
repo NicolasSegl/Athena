@@ -6,12 +6,14 @@
 #include "Athena.h"
 #include "Bitboard.h"
 #include "Board.h"
+#include "Eval.h"
 #include "MoveData.h"
 
 // maybe abstract this into more classes after it starts working
 class ChessGame
 {
 private:
+    bool mCheckOpeningBook;
 	Board mBoard;
     Athena mAthena;
 	std::vector<std::string> mLANStringHistory;
@@ -23,4 +25,5 @@ public:
 	std::string findBestMove(Colour side, float timeToMove);
 	void makeMoveLAN(const std::string& lanString);
 	Colour getSideToMove() { return mBoard.currentPosition.sideToMove; }
+    int getBoardEval() { return Eval::evaluatePosition(&mBoard, Eval::getMidgameValue(mBoard.currentPosition.occupiedBB)); }
 };

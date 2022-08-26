@@ -54,7 +54,7 @@ private:
     int mMaxPly;
     Board* boardPtr;
     
-    int negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool canNullMove = true);
+    int negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool canNullMove);
     int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 
     void assignMoveScores(std::vector<MoveData>& moves, Byte ply);

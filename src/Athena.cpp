@@ -21,6 +21,9 @@ const int MVV_LVA_OFFSET = 100;
 const int KILLER_MOVE_SCORE = 10;
 const int MAX_KILLER_MOVES = 2;
 
+const bool CAN_NULL_MOVE    = true;
+const bool CANNOT_NULL_MOVE = false;
+
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
@@ -53,7 +56,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
 
     auto beforeTime = std::chrono::steady_clock::now();
-    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0) << std::endl;
+    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, CAN_NULL_MOVE) << std::endl;
     auto afterTime = std::chrono::steady_clock::now();
     std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - beforeTime).count() << std::endl;
     std::cout << "num of nodes: " << mNodes << std::endl;
@@ -298,23 +301,27 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
     if (depth <= 0)
         return quietMoveSearch(side, alpha, beta, ply);
-    
+
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
-    
+    Byte kingSquare = boardPtr->computeKingSquare(kingBB);
+    bool inCheck = boardPtr->squareAttacked(kingSquare, !side);
+
+    // futility pruning
+    //if (depth == 1)
+      //  if (canNullMove && !inCheck && )
+        
     // if for whatever reason the side to play has no king, return a huge negative value
     if (!kingBB)
         return -100000;
     
     /*
      null moves are not allowed if:
->>>>>>> newevaluation
         the side to move being in check
         the position is in the endgame
         the previous move was a null move (canNullMove flag)
         it's the first move of the search
     */
-    Byte kingSquare = boardPtr->computeKingSquare(kingBB);
-    if (canNullMove && Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB) > 0.3 && !boardPtr->squareAttacked(kingSquare, !side) && ply != 0)
+    if (canNullMove && Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB) > 0.3 && !inCheck && ply != 0)
     {
         // R = 2. hence the - 2
         // notice that we pass in -beta, -beta+1 instead of -beta, -alpha
@@ -335,6 +342,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
     int maxEval = -INF;
     assignMoveScores(moves, ply);
 
+    bool foundPVMove = false;
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i); // swaps current move with the most likely good move in the move list
@@ -345,7 +353,27 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
             if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
                 boardPtr->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
 
-            int eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1);
+            /*
+            Principial Variation Search (pvs):
+                fully search minimax after we've found a move that has improved alpha (i.e. a candidate for the best move, the PV move)
+                after that, only search minimax in a restricted a/b window
+            */
+            int eval;
+            if (!foundPVMove)
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, CAN_NULL_MOVE);
+            else
+            {
+                /*
+                if we have our PV move (i.e.the move that has improved alpha and that we are assuming to be the best move possible):
+                    search through minimax with a null move, seeing if it is at all possible for alpha to be increased even a little
+                    if it is possible (the evaluation is greater than our current alpha), then research the whole tree to find the new
+                    best move (PV move)
+                */
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, CAN_NULL_MOVE);
+                if (eval > alpha)
+                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, CAN_NULL_MOVE);
+            }
+
             boardPtr->unmakeMove(&moves[i]);
 
             // checking to see if it's invalid just to ensure that some move is made, even if it is terrible
@@ -353,7 +381,12 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
                 mMoveToMake = moves[i];
 
             maxEval = std::max(maxEval, eval);
-            alpha = std::max(alpha, eval);
+            if (eval > alpha)
+            {
+                alpha = eval;
+                foundPVMove = true;
+            }
+
             if (beta <= alpha)
             {
                 insertKillerMove(moves[i], ply);

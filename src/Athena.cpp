@@ -389,7 +389,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
 
             if (beta <= alpha)
             {
-                insertKillerMove(moves[i], ply);
+                if (!moves[i].capturedPieceBB)
+                    insertKillerMove(moves[i], ply);
                 break;
             }
         }

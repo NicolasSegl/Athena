@@ -17,7 +17,7 @@ namespace Evaluation
 const int INF = std::numeric_limits<int>::max();
 
 // move ordering constants
-const int MVV_LVA_OFFSET = 100;
+const int MVV_LVA_OFFSET = 10000000;
 const int KILLER_MOVE_SCORE = 10;
 const int MAX_KILLER_MOVES = 2;
 
@@ -29,8 +29,8 @@ Athena::Athena()
 {   
     mDepth = 7;
     mMaxPly = 15;
-    mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
-    clearTranspositionTable();
+   // mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
+   // clearTranspositionTable();
 
     mKillerMoves = new MoveData*[mMaxPly];
     for (int i = 0; i < mMaxPly; i++)
@@ -39,6 +39,9 @@ Athena::Athena()
         for (int j = 0; j < 2; j++)
             mKillerMoves[i][j] = {};
     }
+    for (int i = 0; i < 64; i++)
+        for (int j = 0; j < 64; j++)
+            mHistoryHeuristic[i][j] = 0;
 }
 
 // sets all the values in the transposition table to null (so we know that no data has yet been found at a given index)
@@ -64,7 +67,6 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     return mMoveToMake;
 }
 
-// finds an opening move from book.txt (file provided by tscp, an educational open source chess engine)
 /*
    openings books courtesy of lichess. the 5 files are taken from https://github.com/lichess-org/chess-openings
    the .tsv files have the uci codes for the openings at the third tab. from thereon the LAN moves are 
@@ -161,12 +163,16 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply)
             moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[pieceValueTo_MVV_LVA_Index(moves[i].capturedPieceValue)]
                                                                [pieceValueTo_MVV_LVA_Index(moves[i].pieceValue)]; // make a function to convert 1, 3, 5, 9 to index?
         else // move is quiet
+        {
             for (int j = 0; j < MAX_KILLER_MOVES; j++)
                 if (moves[i] == mKillerMoves[ply][j])
                 {
                     moves[i].moveScore += MVV_LVA_OFFSET - KILLER_MOVE_SCORE;
                     break;
                 }
+
+            moves[i].moveScore += mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare];
+        }
     }
 }
 
@@ -385,12 +391,15 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
             {
                 alpha = eval;
                 foundPVMove = true;
+                mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare] += depth * depth;
             }
 
             if (beta <= alpha)
             {
+                // if quiet move
                 if (!moves[i].capturedPieceBB)
                     insertKillerMove(moves[i], ply);
+
                 break;
             }
         }

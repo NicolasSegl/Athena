@@ -38,6 +38,8 @@ private:
     int getPieceValue(PieceTypes pieceType);
     int pieceValueTo_MVV_LVA_Index(int value);
     
+    // first element is from square, second element is to square
+    int mHistoryHeuristic[64][64];
     MoveData** mKillerMoves;
     void insertKillerMove(MoveData& move, Byte ply);
 

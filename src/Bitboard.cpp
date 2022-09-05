@@ -39,8 +39,8 @@ namespace BB
     {
         for (int i = 0; i < 8; i++)
         {
-            if (i > 0) adjacentFiles[i] |= fileClear[i - 1];
-            if (i < 7) adjacentFiles[i] |= fileClear[i + 1];
+            if (i > 0) adjacentFiles[i] |= fileMask[i - 1];
+            if (i < 7) adjacentFiles[i] |= fileMask[i + 1];
         }
     }
 

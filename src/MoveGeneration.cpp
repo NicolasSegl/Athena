@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Board.h"
+#include "Constants.h"
 #include "MoveGeneration.h"
 
 namespace MoveGeneration
@@ -265,8 +266,8 @@ namespace MoveGeneration
                 (privileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE) && side == SIDE_BLACK)
             {
 
-                if (side == SIDE_WHITE) { lower = 5;  higher = 7; }
-                if (side == SIDE_BLACK) { lower = 61; higher = 63; }
+                if (side == SIDE_WHITE) { lower = ChessCoord::F1;  higher = ChessCoord::H1; }
+                if (side == SIDE_BLACK) { lower = ChessCoord::F8; higher = ChessCoord::H8; }
 
                 // check if the castle would be legal
                 for (int tile = lower; tile < higher; tile++)
@@ -281,6 +282,7 @@ namespace MoveGeneration
                     md.setMoveType(MoveData::EncodingBits::SHORT_CASTLE);
                     setCastleMovePrivilegesRevoked(md.side, privileges, &md.castlePrivilegesRevoked);
 
+                    // origin/target square for the move relative to the king
                     md.originSquare = lower - 1;
                     md.targetSquare = higher - 1;
                 }
@@ -297,8 +299,8 @@ namespace MoveGeneration
                 (privileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE) && side == SIDE_BLACK)
             {
 
-                if (side == SIDE_WHITE) { lower = 0;  higher = 3; }
-                if (side == SIDE_BLACK) { lower = 56; higher = 59; }
+                if (side == SIDE_WHITE) { lower = ChessCoord::A1;  higher = ChessCoord::D1; }
+                if (side == SIDE_BLACK) { lower = ChessCoord::A8; higher = ChessCoord::D8; }
 
                 // check if the castle would be legal
                 for (int tile = higher; tile > lower; tile--)
@@ -314,6 +316,7 @@ namespace MoveGeneration
                     md.setMoveType(MoveData::EncodingBits::LONG_CASTLE);
                     setCastleMovePrivilegesRevoked(md.side, privileges, &md.castlePrivilegesRevoked);
 
+                    // origin/target square for the move relative to the king
                     md.originSquare = higher + 1;
                     md.targetSquare = lower + 2;
                 }
@@ -340,7 +343,7 @@ namespace MoveGeneration
 
         if (side == SIDE_WHITE || side == -1)
         {
-            if (squareBB & board->currentPosition.whitePawnsBB)   return &board->currentPosition.whitePawnsBB;
+            if (squareBB & board->currentPosition.whitePawnsBB)        return &board->currentPosition.whitePawnsBB;
             else if (squareBB & board->currentPosition.whiteRooksBB)   return &board->currentPosition.whiteRooksBB;
             else if (squareBB & board->currentPosition.whiteKnightsBB) return &board->currentPosition.whiteKnightsBB;
             else if (squareBB & board->currentPosition.whiteBishopsBB) return &board->currentPosition.whiteBishopsBB;
@@ -349,7 +352,7 @@ namespace MoveGeneration
         }
         if (side == SIDE_BLACK || side == -1)
         {
-            if (squareBB & board->currentPosition.blackPawnsBB)   return &board->currentPosition.blackPawnsBB;
+            if (squareBB & board->currentPosition.blackPawnsBB)        return &board->currentPosition.blackPawnsBB;
             else if (squareBB & board->currentPosition.blackRooksBB)   return &board->currentPosition.blackRooksBB;
             else if (squareBB & board->currentPosition.blackKnightsBB) return &board->currentPosition.blackKnightsBB;
             else if (squareBB & board->currentPosition.blackBishopsBB) return &board->currentPosition.blackBishopsBB;
@@ -452,7 +455,6 @@ namespace MoveGeneration
 
     void calculateSideMoves(Board* board, Colour side, std::vector<MoveData>& moveVec, bool captureOnly)
     {
-        //std::vector<MoveData>& moveVec = board->getMovesRef(side);
         moveVec.clear();
         moveVec.reserve(64);
         Bitboard colourBB = side == SIDE_WHITE ? board->currentPosition.whitePiecesBB : board->currentPosition.blackPiecesBB;
@@ -477,7 +479,7 @@ namespace MoveGeneration
                 return;
 
             shortCastleMD = computeCastleMoveData(side, board->currentPosition.castlePrivileges, board->currentPosition.occupiedBB, CastlingPrivilege::WHITE_SHORT_CASTLE);
-            longCastleMD = computeCastleMoveData(side, board->currentPosition.castlePrivileges, board->currentPosition.occupiedBB, CastlingPrivilege::WHITE_LONG_CASTLE);
+            longCastleMD  = computeCastleMoveData(side, board->currentPosition.castlePrivileges, board->currentPosition.occupiedBB, CastlingPrivilege::WHITE_LONG_CASTLE);
         }
         else // black castle moves
         {
@@ -485,7 +487,7 @@ namespace MoveGeneration
                 return;
 
             shortCastleMD = computeCastleMoveData(side, board->currentPosition.castlePrivileges, board->currentPosition.occupiedBB, CastlingPrivilege::BLACK_SHORT_CASTLE);
-            longCastleMD = computeCastleMoveData(side, board->currentPosition.castlePrivileges, board->currentPosition.occupiedBB, CastlingPrivilege::BLACK_LONG_CASTLE);
+            longCastleMD  = computeCastleMoveData(side, board->currentPosition.castlePrivileges, board->currentPosition.occupiedBB, CastlingPrivilege::BLACK_LONG_CASTLE);
         }
 
         if (shortCastleMD.moveType != MoveData::EncodingBits::INVALID)
@@ -494,16 +496,15 @@ namespace MoveGeneration
             movesVec.push_back(longCastleMD);
     }
 
-
     bool doesCaptureAffectCastle(Board* board, MoveData* md)
     {
         bool doesAffectCastlePrivileges = false;
         if (md->capturedPieceBB == &board->currentPosition.blackRooksBB)
         {
             doesAffectCastlePrivileges = true;
-            if (md->targetSquare == 63 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
+            if (md->targetSquare == ChessCoord::H8 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
-            else if (md->targetSquare == 56 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
+            else if (md->targetSquare == ChessCoord::A1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
             else
                 doesAffectCastlePrivileges = false;
@@ -511,9 +512,9 @@ namespace MoveGeneration
         else if (md->capturedPieceBB == &board->currentPosition.whiteRooksBB)
         {
             doesAffectCastlePrivileges = true;
-            if (md->targetSquare == 7 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
+            if (md->targetSquare == ChessCoord::H1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
-            else if (md->targetSquare == 0 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
+            else if (md->targetSquare == ChessCoord::A1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
             else
                 doesAffectCastlePrivileges = false;
@@ -565,8 +566,8 @@ namespace MoveGeneration
                 if (captureOnly && !md.capturedPieceBB)
                     continue;
 
-                if (md.pieceBB == &board->currentPosition.whitePawnsBB && md.targetSquare >= 56) md.setMoveType(MoveData::EncodingBits::PAWN_PROMOTION);
-                if (md.pieceBB == &board->currentPosition.blackPawnsBB && md.targetSquare <= 7)  md.setMoveType(MoveData::EncodingBits::PAWN_PROMOTION);
+                if (md.pieceBB == &board->currentPosition.whitePawnsBB && md.targetSquare >= ChessCoord::A8)  md.setMoveType(MoveData::EncodingBits::PAWN_PROMOTION);
+                if (md.pieceBB == &board->currentPosition.blackPawnsBB && md.targetSquare <= ChessCoord::H1)  md.setMoveType(MoveData::EncodingBits::PAWN_PROMOTION);
                 setEnPassantMoveData(board, square, movesBB, &md);
 
                 // we need to reset the privileges revoked after a move that captures a rook has changed them
@@ -583,27 +584,26 @@ namespace MoveGeneration
 
     void setCastlePrivileges(Board* board, MoveData* md, bool isKing)
     {
-        // its giving the permissions BACK
         if (isKing)
         {
-            if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
+            if (md->side == SIDE_WHITE && md->originSquare == ChessCoord::E1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
-            if (md->side == SIDE_WHITE && md->originSquare == 4 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
+            if (md->side == SIDE_WHITE && md->originSquare == ChessCoord::E1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
-            if (md->side == SIDE_BLACK && md->originSquare == 60 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
+            if (md->side == SIDE_BLACK && md->originSquare == ChessCoord::E8 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
-            if (md->side == SIDE_BLACK && md->originSquare == 60 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
+            if (md->side == SIDE_BLACK && md->originSquare == ChessCoord::E8 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
         }
         else
         {
-            if (md->side == SIDE_WHITE && md->originSquare == 0 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
+            if (md->side == SIDE_WHITE && md->originSquare == ChessCoord::A1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_LONG_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_LONG_CASTLE;
-            else if (md->side == SIDE_WHITE && md->originSquare == 7 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
+            else if (md->side == SIDE_WHITE && md->originSquare == ChessCoord::H1 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::WHITE_SHORT_CASTLE;
-            else if (md->side == SIDE_BLACK && md->originSquare == 56 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
+            else if (md->side == SIDE_BLACK && md->originSquare == ChessCoord::A8 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_LONG_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_LONG_CASTLE;
-            else if (md->side == SIDE_BLACK && md->originSquare == 63 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
+            else if (md->side == SIDE_BLACK && md->originSquare == ChessCoord::H8 && (board->currentPosition.castlePrivileges & (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE))
                 md->castlePrivilegesRevoked |= (Byte)CastlingPrivilege::BLACK_SHORT_CASTLE;
         }
     }

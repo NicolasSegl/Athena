@@ -2,6 +2,7 @@
 
 #include "Bitboard.h"
 #include "Board.h"
+#include "Constants.h"
 #include "Eval.h"
 #include "MoveGeneration.h"
 #include "SquarePieceTables.h"
@@ -9,6 +10,15 @@
 
 namespace Eval
 {
+    // pawn structure values
+    const int DOUBLE_PAWN_PENALTY   = 10;
+    const int ISOLATED_PAWN_PENALTY = 20;
+    const int PASSED_PAWN_BONUS     = 30;
+
+    // rook structure values
+    const int ROOK_OPEN_FILE_BONUS      = 30;
+    const int ROOK_HALF_OPEN_FILE_BONUS = 20;
+
     // returns the evaluation of the board's position relative to the specified side
     int evaluateBoardRelativeTo(Colour side, int eval)
     {
@@ -33,9 +43,6 @@ namespace Eval
         pawnHashTable = new PawnHashTableEntry[PAWN_HASH_TABLE_SIZE];
     }
 
-    const int DOUBLE_PAWN_PENALTY   = 10;
-    const int ISOLATED_PAWN_PENALTY = 20;
-    const int PASSED_PAWN_BONUS     = 30;
     // calculates the value of a pawn based on its structure
     int evaluatePawnStructure(Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB)
     {
@@ -79,11 +86,31 @@ namespace Eval
         return structureEval;
     }
 
-    // scale this value using the midgame value
-    int kingStructureValue() { return 5; }
+    int kingMidgameStructureValue(int square, Bitboard friendlyPiecesBB)
+    {
+        // note that the piece square tables already accomodate for pawn shields in the midgame
+        int value = 0;
 
-    const int ROOK_OPEN_FILE_BONUS      = 30;
-    const int ROOK_HALF_OPEN_FILE_BONUS = 20;
+        // open file next to king. this currently only goes if both files are open. change this so that it isn't checking
+        // if there are TWO (2) adjacent files that are open. make a new array, eastFile and westFile in Bitboard.h to do so
+        // or, if the king HIMSELF is on the open file
+        if (!(BB::adjacentFiles[square % 8] & friendlyPiecesBB))
+        {
+            std::cout << "hit\n";
+            //value -= 50;
+        }
+
+       return value;
+    }
+
+    int kingStructureValue(int square, int pstIndex, Bitboard friendlyPiecesBB, float midgameValue)
+    {
+        int midgameValueScaled = pst::midgameKingTable[pstIndex] * midgameValue + kingMidgameStructureValue(square, friendlyPiecesBB) * midgameValue;
+        int endgameValueScaled = pst::endgameKingTable[pstIndex] * (1 - midgameValue);
+        return midgameValueScaled + endgameValueScaled;
+
+    }
+
     inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB, Bitboard friendlyRooksBB)
     {
         Bitboard bitsSetInFile = BB::fileMask[square % 8] & ~BB::boardSquares[square];
@@ -126,7 +153,7 @@ namespace Eval
                 else if (BB::boardSquares[square] & position.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteKingBB)
                     // so a pawn hash table is just a transposition table but for pawn structures??
-                    whiteEval += KING_VALUE + pst::midgameKingTable[63 - square] * midgameValue + pst::endgameKingTable[63 - square] * (1 - midgameValue);
+                    whiteEval += KING_VALUE + kingStructureValue(square, 63 - square, boardPtr->currentPosition.whitePiecesBB, midgameValue);
             }
             else // piece is black
             {
@@ -136,7 +163,7 @@ namespace Eval
                 else if (BB::boardSquares[square] & position.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square] + rookStructureValue(square, position.occupiedBB, position.blackPiecesBB, position.whitePiecesBB, position.blackRooksBB);
                 else if (BB::boardSquares[square] & position.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
                 else if (BB::boardSquares[square] & position.blackKingBB)
-                    blackEval += KING_VALUE + pst::midgameKingTable[square] * midgameValue + pst::endgameKingTable[square] * (1 - midgameValue);
+                    blackEval += KING_VALUE + kingStructureValue(square, square, boardPtr->currentPosition.blackPiecesBB, midgameValue);
             }
         }
         

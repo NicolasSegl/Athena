@@ -5,6 +5,7 @@
 #include <limits>
 
 #include "Athena.h"
+#include "Constants.h"
 #include "Eval.h"
 #include "Outcomes.h"
 #include "utils.h"
@@ -93,7 +94,7 @@ std::string Athena::getOpeningBookMove(Board* boardPtr, const std::vector<std::s
         {
             fileFields.clear();
             //std::getline(bookFile, fileLine);
-            splitString(fileLine, fileFields, 0x9); // 0x9 is the ascii code character for tabs
+            splitString(fileLine, fileFields, ASCII::TAB_CODE); // 0x9 is the ascii code character for tabs
 
             // get the list of lan string moves for the considered opening
             std::vector<std::string> lanMovesVec;

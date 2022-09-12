@@ -20,12 +20,6 @@ namespace FenDataFields
 	};
 }
 
-namespace ASCII
-{
-	const int NUMBER_ONE_CODE = 49;
-	const int LETTER_A_CODE = 97;
-}
-
 // sets appropriate bits on white/black pieces bitboards and occupied/empty bitboards
 void Board::setAuxillaryBitboards()
 {

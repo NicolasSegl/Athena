@@ -17,3 +17,10 @@ namespace ChessCoord
         A8, B8, C8, D8, E8, F8, G8, H8,
     };
 }
+
+namespace ASCII
+{
+    const int NUMBER_ONE_CODE = 49;
+    const int LETTER_A_CODE   = 97;
+    const int TAB_CODE        = 0x9;
+}

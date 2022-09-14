@@ -124,7 +124,7 @@ namespace Eval
         if (!(bitsSetInFile & occupiedBB))
             value += ROOK_OPEN_FILE_BONUS;
         else // potentially a half-open file
-            if ((bitsSetInFile & friendlyPiecesBB) && !(bitsSetInFile & enemyPiecesBB))
+            if (!(bitsSetInFile & friendlyPiecesBB) && (bitsSetInFile & enemyPiecesBB))
                 value += ROOK_HALF_OPEN_FILE_BONUS;
 
         return value;

@@ -3,6 +3,7 @@
 #include <random>
 
 #include "Board.h"
+#include "Constants.h"
 #include "MoveGeneration.h"
 #include "Outcomes.h"
 #include "utils.h"

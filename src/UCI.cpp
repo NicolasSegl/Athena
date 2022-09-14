@@ -27,7 +27,7 @@ void UCI::respondIsReady()
 {
 	MoveGeneration::init();
 	initBitsSetTable();
-    Eval::initPawnHashTable();
+    Eval::init();
 	std::cout << "readyok\n";
 }
 

@@ -21,5 +21,5 @@ namespace Eval
     float getMidgameValue(Bitboard occupiedBB);
     int see(Board* boardPtr, Byte square, Colour attackingSide, int currentSquareValue);
     
-    void initPawnHashTable();
+    void init();
 }

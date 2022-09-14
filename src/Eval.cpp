@@ -11,9 +11,9 @@
 namespace Eval
 {
     // pawn structure values
-    const int DOUBLE_PAWN_PENALTY   = 10;
-    const int ISOLATED_PAWN_PENALTY = 20;
-    const int PASSED_PAWN_BONUS     = 30;
+    const int PAWN_DOUBLED_PENALTY   = 10;
+    const int PAWN_ISOLATED_PENALTY  = 20;
+    const int PAWN_PASSED_BONUS      = 30;
 
     // rook structure values
     const int ROOK_OPEN_FILE_BONUS      = 30;
@@ -21,6 +21,18 @@ namespace Eval
 
     // king midgame structure values
     const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
+    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 10;
+
+    // pawn hash table 
+    struct PawnHashTableEntry
+    {
+        int structureEval;
+        Bitboard pawnsBB = 0;
+    };
+    PawnHashTableEntry* pawnHashTable;
+    const int PAWN_HASH_TABLE_SIZE = 1000000;
+
+    int distFromTable[64][64];
 
     // returns the evaluation of the board's position relative to the specified side
     int evaluateBoardRelativeTo(Colour side, int eval)
@@ -33,17 +45,26 @@ namespace Eval
         return countSetBits64(occupiedBB)/32.f; // 32 = number of total pieces possible
     }
 
-    struct PawnHashTableEntry
-    {
-        int structureEval;
-        Bitboard pawnsBB = 0;
-    };
-
-    PawnHashTableEntry* pawnHashTable;
-    const int PAWN_HASH_TABLE_SIZE = 1000000;
     void initPawnHashTable()
     {
         pawnHashTable = new PawnHashTableEntry[PAWN_HASH_TABLE_SIZE];
+    }
+
+    void initDistFromTable()
+    {
+        for (int from = 0; from < 64; from++)
+            for (int to = 0; to < 64; to++)
+            {
+                int rowDist = abs((from % 8) - (to % 8));
+                int columnDist = abs((from / 8) - (to / 8));
+                distFromTable[from][to] = rowDist + columnDist;
+            }
+    }
+
+    void init()
+    {
+        initPawnHashTable();
+        initDistFromTable();
     }
 
     // calculates the value of a pawn based on its structure
@@ -64,11 +85,11 @@ namespace Eval
             {
                 // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
                 if ((BB::fileMask[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
-                    structureEval -= DOUBLE_PAWN_PENALTY;
+                    structureEval -= PAWN_DOUBLED_PENALTY;
 
                 // isolated pawns
                 if (!(BB::adjacentFiles[square % 8] & friendlyPawnsBB))
-                    structureEval -= ISOLATED_PAWN_PENALTY;
+                    structureEval -= PAWN_ISOLATED_PENALTY;
                 // if the pawn is not isolated, it may be backwards
                 else
                 {
@@ -79,7 +100,7 @@ namespace Eval
                 // test speed up when using file/rank masks instead of ~file or rank clears
                 // passed pawns
                 if (!((BB::adjacentFiles[square % 8] | BB::fileMask[square % 8]) & enemyPawnsBB))
-                    structureEval += PASSED_PAWN_BONUS;
+                    structureEval += PAWN_PASSED_BONUS;
             }
         }
         
@@ -89,7 +110,57 @@ namespace Eval
         return structureEval;
     }
 
-    int kingMidgameStructureValue(int square, Bitboard friendlyPiecesBB)
+    int whiteKingShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
+    {
+        int value = 0;
+        // long castle
+        if (kingSquare < ChessCoord::E1)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+        // short castle
+        else if (kingSquare > ChessCoord::E1)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+
+        return value;
+    }
+
+    int blackShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
+    {
+        int value = 0;
+        // long castle
+        if (kingSquare < ChessCoord::E8)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+        // short castle
+        else if (kingSquare > ChessCoord::E8)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+
+        return value;
+    }
+
+    int kingMidgameStructureValue(int square, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB)
     {
         // note that the piece square tables already accomodate for pawn shields in the midgame
         int value = 0;
@@ -106,15 +177,20 @@ namespace Eval
                 value -= KING_MIDGAME_OPEN_FILE_PENALTY;
         }
 
+        // pawn shield
+        value += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackShieldValue(square, friendlyPawnsBB);
+
        return value;
     }
 
-    int kingStructureValue(int square, int pstIndex, Bitboard friendlyPiecesBB, float midgameValue)
+    int kingStructureValue(int square, int pstIndex, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB, float midgameValue)
     {
-        int midgameValueScaled = pst::midgameKingTable[pstIndex] * midgameValue + kingMidgameStructureValue(square, friendlyPiecesBB) * midgameValue;
+        int midgameValueScaled = pst::midgameKingTable[pstIndex]
+                                 * midgameValue + 
+                                 kingMidgameStructureValue(square, side, friendlyPiecesBB, friendlyPawnsBB)
+                                 * midgameValue;
         int endgameValueScaled = pst::endgameKingTable[pstIndex] * (1 - midgameValue);
         return midgameValueScaled + endgameValueScaled;
-
     }
 
     inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB, Bitboard friendlyRooksBB)
@@ -159,7 +235,7 @@ namespace Eval
                 else if (BB::boardSquares[square] & position.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteKingBB)
                     // so a pawn hash table is just a transposition table but for pawn structures??
-                    whiteEval += KING_VALUE + kingStructureValue(square, 63 - square, boardPtr->currentPosition.whitePiecesBB, midgameValue);
+                    whiteEval += KING_VALUE + kingStructureValue(square, 63 - square, SIDE_WHITE, position.whitePiecesBB, position.whitePawnsBB, midgameValue);
             }
             else // piece is black
             {
@@ -169,7 +245,7 @@ namespace Eval
                 else if (BB::boardSquares[square] & position.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square] + rookStructureValue(square, position.occupiedBB, position.blackPiecesBB, position.whitePiecesBB, position.blackRooksBB);
                 else if (BB::boardSquares[square] & position.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
                 else if (BB::boardSquares[square] & position.blackKingBB)
-                    blackEval += KING_VALUE + kingStructureValue(square, square, boardPtr->currentPosition.blackPiecesBB, midgameValue);
+                    blackEval += KING_VALUE + kingStructureValue(square, square, SIDE_BLACK, position.blackPiecesBB, position.blackPawnsBB, midgameValue);
             }
         }
         

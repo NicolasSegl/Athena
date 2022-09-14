@@ -19,6 +19,9 @@ namespace Eval
     const int ROOK_OPEN_FILE_BONUS      = 30;
     const int ROOK_HALF_OPEN_FILE_BONUS = 20;
 
+    // king midgame structure values
+    const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
+
     // returns the evaluation of the board's position relative to the specified side
     int evaluateBoardRelativeTo(Colour side, int eval)
     {
@@ -91,13 +94,16 @@ namespace Eval
         // note that the piece square tables already accomodate for pawn shields in the midgame
         int value = 0;
 
-        // open file next to king. this currently only goes if both files are open. change this so that it isn't checking
-        // if there are TWO (2) adjacent files that are open. make a new array, eastFile and westFile in Bitboard.h to do so
-        // or, if the king HIMSELF is on the open file
-        if (!(BB::adjacentFiles[square % 8] & friendlyPiecesBB))
+        // open file next to king
+        if (square % 8 > 0)
         {
-            std::cout << "hit\n";
-            //value -= 50;
+            if (!(BB::westFile[square % 8] & friendlyPiecesBB))
+                value -= KING_MIDGAME_OPEN_FILE_PENALTY;
+        }
+        if (square % 8 < 7)
+        {
+            if (!(BB::eastFile[square % 8] & friendlyPiecesBB))
+                value -= KING_MIDGAME_OPEN_FILE_PENALTY;
         }
 
        return value;

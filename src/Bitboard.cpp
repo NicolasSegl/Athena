@@ -6,6 +6,9 @@
 namespace BB
 {
     extern Bitboard adjacentFiles[8] { 0 };
+	extern Bitboard eastFile[8]      { 0 };
+	extern Bitboard westFile[8]      { 0 };
+
     extern Bitboard boardSquares[64] { 0 };
 
     extern Bitboard fileClear[8]     { 0 };
@@ -39,8 +42,9 @@ namespace BB
     {
         for (int i = 0; i < 8; i++)
         {
-            if (i > 0) adjacentFiles[i] |= fileMask[i - 1];
-            if (i < 7) adjacentFiles[i] |= fileMask[i + 1];
+            if (i > 0) westFile[i] |= fileMask[i - 1];
+            if (i < 7) eastFile[i] |= fileMask[i + 1];
+            adjacentFiles[i] |= westFile[i] | eastFile[i];
         }
     }
 

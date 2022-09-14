@@ -34,7 +34,10 @@ namespace BB
 		RANK_EIGHTH,
 	};
 
-    extern Bitboard adjacentFiles[8];
+	extern Bitboard eastFile[8];
+	extern Bitboard westFile[8];
+	extern Bitboard adjacentFiles[8];
+
     extern Bitboard boardSquares[64];
 
     extern Bitboard fileClear[8];

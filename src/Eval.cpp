@@ -78,18 +78,18 @@ namespace Eval
         if (pawnHashTable[hashEntryIndex].pawnsBB == friendlyPawnsBB)
             return pawnHashTable[hashEntryIndex].structureEval;
 
-        int structureEval = 0;
+        int structureValue = 0;
         for (int square = 0; square < 64; square++)
         {
             if (BB::boardSquares[square] & friendlyPawnsBB)
             {
                 // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
                 if ((BB::fileMask[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
-                    structureEval -= PAWN_DOUBLED_PENALTY;
+                    structureValue -= PAWN_DOUBLED_PENALTY;
 
                 // isolated pawns
                 if (!(BB::adjacentFiles[square % 8] & friendlyPawnsBB))
-                    structureEval -= PAWN_ISOLATED_PENALTY;
+                    structureValue -= PAWN_ISOLATED_PENALTY;
                 // if the pawn is not isolated, it may be backwards
                 else
                 {
@@ -100,87 +100,87 @@ namespace Eval
                 // test speed up when using file/rank masks instead of ~file or rank clears
                 // passed pawns
                 if (!((BB::adjacentFiles[square % 8] | BB::fileMask[square % 8]) & enemyPawnsBB))
-                    structureEval += PAWN_PASSED_BONUS;
+                    structureValue += PAWN_PASSED_BONUS;
             }
         }
         
         pawnHashTable[hashEntryIndex].pawnsBB          = friendlyPawnsBB;
-        pawnHashTable[hashEntryIndex].structureEval    = structureEval;
+        pawnHashTable[hashEntryIndex].structureEval    = structureValue;
 
-        return structureEval;
+        return structureValue;
     }
 
     int whiteKingShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
     {
-        int value = 0;
+        int shieldValue = 0;
         // long castle
         if (kingSquare < ChessCoord::E1)
         {
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
         }
         // short castle
         else if (kingSquare > ChessCoord::E1)
         {
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G3]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F2]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
         }
 
-        return value;
+        return shieldValue;
     }
 
     int blackShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
     {
-        int value = 0;
+        int shieldValue = 0;
         // long castle
         if (kingSquare < ChessCoord::E8)
         {
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
         }
         // short castle
         else if (kingSquare > ChessCoord::E8)
         {
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G6]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
-            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F7]) value += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
         }
 
-        return value;
+        return shieldValue;
     }
 
     int kingMidgameStructureValue(int square, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB)
     {
         // note that the piece square tables already accomodate for pawn shields in the midgame
-        int value = 0;
+        int structureValue = 0;
 
         // open file next to king
         if (square % 8 > 0)
         {
             if (!(BB::westFile[square % 8] & friendlyPiecesBB))
-                value -= KING_MIDGAME_OPEN_FILE_PENALTY;
+                structureValue -= KING_MIDGAME_OPEN_FILE_PENALTY;
         }
         if (square % 8 < 7)
         {
             if (!(BB::eastFile[square % 8] & friendlyPiecesBB))
-                value -= KING_MIDGAME_OPEN_FILE_PENALTY;
+                structureValue -= KING_MIDGAME_OPEN_FILE_PENALTY;
         }
 
         // pawn shield
-        value += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackShieldValue(square, friendlyPawnsBB);
+        structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackShieldValue(square, friendlyPawnsBB);
 
-       return value;
+       return structureValue;
     }
 
     int kingStructureValue(int square, int pstIndex, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB, float midgameValue)
@@ -196,20 +196,20 @@ namespace Eval
     inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB, Bitboard friendlyRooksBB)
     {
         Bitboard bitsSetInFile = BB::fileMask[square % 8] & ~BB::boardSquares[square];
-        int value = 0;
+        int structureValue = 0;
 
         // rooks are connected
         if (MoveGeneration::computePseudoRookMoves(square, friendlyPiecesBB | enemyPiecesBB, friendlyPiecesBB) & friendlyRooksBB)
-            value += 10;
+            structureValue += 10;
         
         // open file
         if (!(bitsSetInFile & occupiedBB))
-            value += ROOK_OPEN_FILE_BONUS;
+            structureValue += ROOK_OPEN_FILE_BONUS;
         else // potentially a half-open file
             if (!(bitsSetInFile & friendlyPiecesBB) && (bitsSetInFile & enemyPiecesBB))
-                value += ROOK_HALF_OPEN_FILE_BONUS;
+                structureValue += ROOK_HALF_OPEN_FILE_BONUS;
 
-        return value;
+        return structureValue;
     }
 
     int evaluatePosition(Board* boardPtr, float midgameValue)

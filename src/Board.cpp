@@ -345,14 +345,14 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 	{
 		Bitboard northWestAttacks = BB::northWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
 		Bitboard northEastAttacks = BB::northEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
-		if ((BB::boardSquares[square] & northWestAttacks) || (BB::boardSquares[square] & northEastAttacks)) 
+		if (BB::boardSquares[square] & (northWestAttacks | northEastAttacks))
 			return true;
 	}
 	else
 	{
 		Bitboard southWestAttacks = BB::southWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
 		Bitboard southEastAttacks = BB::southEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
-		if ((BB::boardSquares[square] & southWestAttacks) || (BB::boardSquares[square] & southEastAttacks))
+		if (BB::boardSquares[square] & (southWestAttacks | southEastAttacks))
 			return true;
 	}
     

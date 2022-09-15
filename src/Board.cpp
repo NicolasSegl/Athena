@@ -343,12 +343,16 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
 	if (attackingSide == SIDE_WHITE)
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9))) 
+		Bitboard northWestAttacks = BB::northWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard northEastAttacks = BB::northEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+		if ((BB::boardSquares[square] & northWestAttacks) || (BB::boardSquares[square] & northEastAttacks)) 
 			return true;
 	}
 	else
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)))
+		Bitboard southWestAttacks = BB::southWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard southEastAttacks = BB::southEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+		if ((BB::boardSquares[square] & southWestAttacks) || (BB::boardSquares[square] & southEastAttacks))
 			return true;
 	}
     
@@ -380,7 +384,10 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
 	if (attackingSide == SIDE_WHITE)
 	{
-		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)) & BB::boardSquares[square];
+		Bitboard northWestAttacks = BB::northWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard northEastAttacks = BB::northEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+
+		*pieceAttacksBB = (northWestAttacks | northEastAttacks) & BB::boardSquares[square];
 		if (*pieceAttacksBB)
 		{
 			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) >> 7) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9) >> 9);
@@ -391,7 +398,10 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 	else
 	{
-		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)) & BB::boardSquares[square];
+		Bitboard southWestAttacks = BB::southWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard southEastAttacks = BB::southEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+
+		*pieceAttacksBB = (southWestAttacks | southEastAttacks) & BB::boardSquares[square];
 		if (*pieceAttacksBB)
 		{
 			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) << 9) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7) << 7);

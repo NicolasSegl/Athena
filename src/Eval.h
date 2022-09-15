@@ -15,6 +15,8 @@ namespace Eval
     const int KNIGHT_VALUE = 320;
     const int PAWN_VALUE = 100;
 
+    const int CHECKMATE_VALUE = 1000000;
+
     int evaluateBoardRelativeTo(Colour side, int eval);
     int evaluatePosition(Board* boardPtr, float midgameValue);
 

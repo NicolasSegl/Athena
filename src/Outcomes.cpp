@@ -1,4 +1,5 @@
 #include "Board.h"
+#include "ChessPosition.h"
 #include "Outcomes.h"
 
 namespace Outcomes
@@ -18,6 +19,18 @@ namespace Outcomes
 	}
 
 	bool isFiftyMoveDraw(int fiftyMoveCounter) { return fiftyMoveCounter >= 100; }
+
+	bool isInsufficientMaterial(ChessPosition position)
+	{
+		// no pawns
+		if (!position.whitePawnsBB && !position.blackPawnsBB)
+		{
+			// lone kings
+			if (position.occupiedBB & ~(position.whiteKingBB | position.blackKingBB) == 0)
+				return true;
+			//else if ()
+		}
+	}
 
 	bool isDraw(Board* boardPtr)
 	{

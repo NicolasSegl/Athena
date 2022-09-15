@@ -34,6 +34,17 @@ namespace BB
 		RANK_EIGHTH,
 	};
 
+	// functions for bit shifting a bitboard in some direction as to get the corresponding resultant bitboard 
+	inline Bitboard northEastOne(Bitboard bb)  { return bb << 9; }
+	inline Bitboard northOne(Bitboard bb) 	   { return bb << 8; }
+	inline Bitboard northWestOne(Bitboard bb)  { return bb << 7; }
+	inline Bitboard westOne(Bitboard bb) 	   { return bb << 1; }
+	inline Bitboard eastOne(Bitboard bb) 	   { return bb >> 1; }
+	inline Bitboard southWestOne(Bitboard bb)  { return bb >> 9; }
+	inline Bitboard southOne(Bitboard bb) 	   { return bb >> 8; }
+	inline Bitboard southEastOne(Bitboard bb)  { return bb >> 7; }
+	
+
 	extern Bitboard eastFile[8];
 	extern Bitboard westFile[8];
 	extern Bitboard adjacentFiles[8];

@@ -23,7 +23,7 @@ const bool CANNOT_NULL_MOVE = false;
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
-    mDepth = 7;
+    mDepth = 9;
     mMaxPly = 15;
    // mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
    // clearTranspositionTable();
@@ -55,7 +55,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
 
     auto beforeTime = std::chrono::steady_clock::now();
-    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, CAN_NULL_MOVE) << std::endl;
+    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE) << std::endl;
     auto afterTime = std::chrono::steady_clock::now();
     std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - beforeTime).count() << std::endl;
     std::cout << "num of nodes: " << mNodes << std::endl;
@@ -294,7 +294,7 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 }
 
 // alpha is the lower bound for a move's evaluation, beta is the upper bound for a move's evaluation
-int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool canNullMove)
+int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove)
 {
     // OR INSUFFICIENT MATERIAL DRAW
     // simplify it all to an isDraw function
@@ -302,7 +302,14 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
         return 0;
 
     if (depth <= 0)
-        return quietMoveSearch(side, alpha, beta, ply);
+    {
+        if (lastMove)
+            if (lastMove->capturedPieceBB)
+                return quietMoveSearch(side, alpha, beta, ply);
+
+        float midgameValue = Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB);
+        return Eval::evaluateBoardRelativeTo(side, Eval::evaluatePosition(boardPtr, midgameValue));
+    }
 
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
     Byte kingSquare = boardPtr->computeKingSquare(kingBB);
@@ -329,7 +336,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
         // notice that we pass in -beta, -beta+1 instead of -beta, -alpha
         // this sets the upper bound to being just 1 greater than the lower bound
         // meaning that any move that is better than the lower bound by just a single point will cause a cutoff
-        int eval = -negamax(depth - 1 - 2, !side, -beta, -beta+1, ply + 1, false);
+        int eval = -negamax(depth - 1 - 2, !side, -beta, -beta+1, ply + 1, lastMove, false);
         // if, without making any move, the evaluation comes back and is STILL better than the current worst move, make a cutoff
         if (eval >= beta)
             return eval;
@@ -362,7 +369,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
             */
             int eval;
             if (!foundPVMove)
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, CAN_NULL_MOVE);
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE);
             else
             {
                 /*
@@ -371,9 +378,9 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
                     if it is possible (the evaluation is greater than our current alpha), then research the whole tree to find the new
                     best move (PV move)
                 */
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, CAN_NULL_MOVE);
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE);
                 if (eval > alpha)
-                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, CAN_NULL_MOVE);
+                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE);
             }
 
             boardPtr->unmakeMove(&moves[i]);

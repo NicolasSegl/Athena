@@ -1,7 +1,7 @@
 # Athena
 
 ## About
-Athena is a UCI compatible chess engine. It is a work-in-progress and can currently be played against on lichess.org at lichess.org/@/AthenaBot
+Athena is a work-in-progress UCI compatible chess engine.
 
 ## Features
 * UCI compatability
@@ -19,4 +19,4 @@ Athena is a UCI compatible chess engine. It is a work-in-progress and can curren
 
 
 # Misc
-If attempting to compile, make sure that the "/books/" folder is in the current working directory in order for Athena to be able to find her opening moves
+If you want Athena to use her own opening book, make sure that '/books/' is in her current working directory.

@@ -80,8 +80,11 @@ namespace MoveGeneration
         Bitboard kingHFileClearedBB = BB::boardSquares[kingLoc] & BB::fileClear[BB::FILE_H];
 
         // consider all ordinal and cardinal directions
-        kingLookupTable[kingLoc] = kingAFileClearedBB << 7 | kingAFileClearedBB >> 1 | kingAFileClearedBB >> 9 | BB::boardSquares[kingLoc] << 8 |
-            kingHFileClearedBB << 9 | kingHFileClearedBB << 1 | kingHFileClearedBB >> 7 | BB::boardSquares[kingLoc] >> 8;
+        kingLookupTable[kingLoc] = 
+                                 BB::northWestOne(kingAFileClearedBB) | BB::eastOne(kingAFileClearedBB) | 
+                                 BB::southWestOne(kingAFileClearedBB) | BB::northOne(BB::boardSquares[kingLoc]) |
+                                 BB::northEastOne(kingHFileClearedBB) | BB::westOne(kingHFileClearedBB) | 
+                                 BB::southEastOne(kingHFileClearedBB) | BB::southOne(BB::boardSquares[kingLoc]);
     }
 
     void initPawnLT(Colour side, Byte pawnLoc)
@@ -90,9 +93,9 @@ namespace MoveGeneration
         Bitboard pawnHFileClearedBB = BB::boardSquares[pawnLoc] & BB::fileClear[BB::FILE_H];
 
         if (side == SIDE_WHITE)
-            pawnAttackLookupTable[SIDE_WHITE][pawnLoc] = pawnAFileClearedBB << 7 | pawnHFileClearedBB << 9;
+            pawnAttackLookupTable[SIDE_WHITE][pawnLoc] = BB::northWestOne(pawnAFileClearedBB) | BB::northEastOne(pawnHFileClearedBB);
         else if (side == SIDE_BLACK)
-            pawnAttackLookupTable[SIDE_BLACK][pawnLoc] = pawnAFileClearedBB >> 9 | pawnHFileClearedBB >> 7;
+            pawnAttackLookupTable[SIDE_BLACK][pawnLoc] = BB::southWestOne(pawnAFileClearedBB) | BB::southEastOne(pawnHFileClearedBB);
     }
 
     void init()
@@ -129,16 +132,16 @@ namespace MoveGeneration
 
         if (side == SIDE_WHITE)
         {
-            Bitboard oneStepBB = (BB::boardSquares[fromSquare] << 8) & emptyBB;
+            Bitboard oneStepBB = BB::northOne(BB::boardSquares[fromSquare]) & emptyBB;
             // if the twostep is on the fourth rank, it would mean the pawn was on its home row
-            Bitboard twoStepBB = ((oneStepBB << 8) & BB::rankMask[BB::RANK_FOURTH]) & emptyBB;
+            Bitboard twoStepBB = ((BB::northOne(oneStepBB)) & BB::rankMask[BB::RANK_FOURTH]) & emptyBB;
             movesBB |= oneStepBB | twoStepBB;
         }
         else if (side == SIDE_BLACK)
         {
-            Bitboard oneStepBB = (BB::boardSquares[fromSquare] >> 8) & emptyBB;
+            Bitboard oneStepBB = BB::southOne(BB::boardSquares[fromSquare]) & emptyBB;
             // if the twostep is on the fifth rank, it would mean the pawn was on its home row
-            Bitboard twoStepBB = ((oneStepBB >> 8) & BB::rankMask[BB::RANK_FIFTH]) & emptyBB;
+            Bitboard twoStepBB = ((BB::southOne(oneStepBB)) & BB::rankMask[BB::RANK_FIFTH]) & emptyBB;
             movesBB |= oneStepBB | twoStepBB;
         }
 

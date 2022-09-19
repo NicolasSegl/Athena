@@ -10,11 +10,6 @@
 #include "Outcomes.h"
 #include "utils.h"
 
-namespace Evaluation
-{
-    const int CHECKMATE_VALUE = 1000000;
-}
-
 const int INF = std::numeric_limits<int>::max();
 
 // move ordering constants
@@ -411,7 +406,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, bool 
     {
         Byte kingSquare = boardPtr->computeKingSquare(side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB);
         if (boardPtr->squareAttacked(kingSquare, !side)) // checkmate (no legal moves and king is in check)
-            return -Evaluation::CHECKMATE_VALUE * depth;
+            return -Eval::CHECKMATE_VALUE * depth;
         else
             return 0; // stalemate (no legal moves and king is not in check)
     }

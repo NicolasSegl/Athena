@@ -3,6 +3,7 @@
 #include <random>
 
 #include "Board.h"
+#include "Constants.h"
 #include "MoveGeneration.h"
 #include "Outcomes.h"
 #include "utils.h"
@@ -300,7 +301,7 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 		else // the move was an en passant capture
 		{
 			// as the target square is not actually the location of the piece for an en passant capture, we need to find the square of the victim
-			Bitboard capturedPieceBB = moveData->side == SIDE_WHITE ? (targetBB >> 8) : (targetBB << 8);
+			Bitboard capturedPieceBB = moveData->side == SIDE_WHITE ? (BB::southOne(targetBB)) : (BB::northOne(targetBB));
 
 			// unset the bit that was captured
 			*moveData->capturedPieceBB  ^= capturedPieceBB;
@@ -342,12 +343,16 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
 	if (attackingSide == SIDE_WHITE)
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9))) 
+		Bitboard northWestAttacksBB = BB::northWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard northEastAttacksBB = BB::northEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+		if (BB::boardSquares[square] & (northWestAttacksBB | northEastAttacksBB))
 			return true;
 	}
 	else
 	{
-		if ((BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9)) || (BB::boardSquares[square] & ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)))
+		Bitboard southWestAttacksBB = BB::southWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard southEastAttacksBB = BB::southEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+		if (BB::boardSquares[square] & (southWestAttacksBB | southEastAttacksBB))
 			return true;
 	}
     
@@ -371,7 +376,7 @@ bool Board::squareAttacked(Byte square, Colour attackingSide)
 
 // using the same methods as Board::squareAttacked(), this function returns the value of the least valuable piece attacking the square as well as its piece bitboard
 // it is ordered differently, however, as to make sure the least valuable attackers are considered first
-void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard** pieceBB, Bitboard* pieceAttacksBB)
+void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard** pieceBB, Bitboard* attackingPiecesBB)
 {
 	Bitboard opPawnsBB = attackingSide == SIDE_WHITE ? currentPosition.whitePawnsBB : currentPosition.blackPawnsBB;
 
@@ -379,10 +384,15 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	// we are preventing the "attack" from overflowing into the file on the opposite end of the board
 	if (attackingSide == SIDE_WHITE)
 	{
-		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9)) & BB::boardSquares[square];
-		if (*pieceAttacksBB)
+		Bitboard northWestAttacksBB = BB::northWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard northEastAttacksBB = BB::northEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+
+		*attackingPiecesBB = (northWestAttacksBB | northEastAttacksBB) & BB::boardSquares[square];
+		if (*attackingPiecesBB)
 		{
-			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) << 7) >> 7) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) << 9) >> 9);
+			// by shifting the attacks bitboards in the opposite direction, we can get
+			// the bitboard that contains the location of all the pawns attacking the square
+			*attackingPiecesBB = BB::southEastOne(northWestAttacksBB) | BB::southWestOne(northEastAttacksBB);
 			*pieceValue = 100;
 			*pieceBB = &currentPosition.whitePawnsBB;
 			return;
@@ -390,10 +400,15 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 	else
 	{
-		*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) | ((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7)) & BB::boardSquares[square];
-		if (*pieceAttacksBB)
+		Bitboard southWestAttacks = BB::southWestOne(opPawnsBB & BB::fileClear[BB::FILE_A]);
+		Bitboard southEastAttacks = BB::southEastOne(opPawnsBB & BB::fileClear[BB::FILE_H]);
+
+		// by shifting the attacks bitboards in the opposite direction, we can get
+		// the bitboard that contains the location of all the pawns attacking the square
+		*attackingPiecesBB = (southWestAttacks | southEastAttacks) & BB::boardSquares[square];
+		if (*attackingPiecesBB)
 		{
-			*pieceAttacksBB = (((opPawnsBB & BB::fileClear[BB::FILE_A]) >> 9) << 9) | (((opPawnsBB & BB::fileClear[BB::FILE_H]) >> 7) << 7);
+			*attackingPiecesBB = BB::northEastOne(southWestAttacks) | BB::northWestOne(southEastAttacks);
 			*pieceValue = 100;
 			*pieceBB = &currentPosition.blackPawnsBB;
 			return;
@@ -401,8 +416,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 
 	Bitboard* opKnightsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteKnightsBB : &currentPosition.blackKnightsBB;
-	*pieceAttacksBB = MoveGeneration::knightLookupTable[square] & *opKnightsBB;
-	if (*pieceAttacksBB)
+	*attackingPiecesBB = MoveGeneration::knightLookupTable[square] & *opKnightsBB;
+	if (*attackingPiecesBB)
 	{
 		*pieceValue = 320;
 		*pieceBB = opKnightsBB;
@@ -413,8 +428,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 
 	Bitboard* opBishopsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteBishopsBB : &currentPosition.blackBishopsBB;
 	Bitboard bishopMovesBB = MoveGeneration::computePseudoBishopMoves(square, currentPosition.occupiedBB, friendlyPieces);
-	*pieceAttacksBB = bishopMovesBB & *opBishopsBB;
-	if (*pieceAttacksBB)
+	*attackingPiecesBB = bishopMovesBB & *opBishopsBB;
+	if (*attackingPiecesBB)
 	{
 		*pieceValue = 330;
 		*pieceBB = opBishopsBB;
@@ -423,8 +438,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 
 	Bitboard* opRooks = attackingSide == SIDE_WHITE ? &currentPosition.whiteRooksBB : &currentPosition.blackRooksBB;
 	Bitboard rookMovesBB = MoveGeneration::computePseudoRookMoves(square, currentPosition.occupiedBB, friendlyPieces);
-	*pieceAttacksBB = rookMovesBB & *opRooks;
-	if (*pieceAttacksBB)
+	*attackingPiecesBB = rookMovesBB & *opRooks;
+	if (*attackingPiecesBB)
 	{
 		*pieceValue = 500;
 		*pieceBB = opRooks;
@@ -432,8 +447,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 
 	Bitboard* opQueens = attackingSide == SIDE_WHITE ? &currentPosition.whiteQueensBB : &currentPosition.blackQueensBB;
-	*pieceAttacksBB = (rookMovesBB | bishopMovesBB) & *opQueens;
-	if (*pieceAttacksBB)
+	*attackingPiecesBB = (rookMovesBB | bishopMovesBB) & *opQueens;
+	if (*attackingPiecesBB)
 	{
 		*pieceValue = 900;
 		*pieceBB = opQueens;
@@ -441,8 +456,8 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 	}
 
 	Bitboard* opKingsBB = attackingSide == SIDE_WHITE ? &currentPosition.whiteKingBB : &currentPosition.blackKingBB;
-	*pieceAttacksBB = MoveGeneration::kingLookupTable[square] & *opKingsBB;
-	if (*pieceAttacksBB)
+	*attackingPiecesBB = MoveGeneration::kingLookupTable[square] & *opKingsBB;
+	if (*attackingPiecesBB)
 	{
 		*pieceValue = 20000;
 		*pieceBB = opKingsBB;

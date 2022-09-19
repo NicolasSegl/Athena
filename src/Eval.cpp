@@ -11,13 +11,28 @@
 namespace Eval
 {
     // pawn structure values
-    const int DOUBLE_PAWN_PENALTY   = 10;
-    const int ISOLATED_PAWN_PENALTY = 20;
-    const int PASSED_PAWN_BONUS     = 30;
+    const int PAWN_DOUBLED_PENALTY   = 10;
+    const int PAWN_ISOLATED_PENALTY  = 20;
+    const int PAWN_PASSED_BONUS      = 30;
 
     // rook structure values
     const int ROOK_OPEN_FILE_BONUS      = 30;
     const int ROOK_HALF_OPEN_FILE_BONUS = 20;
+
+    // king midgame structure values
+    const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
+    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 10;
+
+    // pawn hash table 
+    struct PawnHashTableEntry
+    {
+        int structureEval;
+        Bitboard pawnsBB = 0;
+    };
+    PawnHashTableEntry* pawnHashTable;
+    const int PAWN_HASH_TABLE_SIZE = 1000000;
+
+    int distFromTable[64][64];
 
     // returns the evaluation of the board's position relative to the specified side
     int evaluateBoardRelativeTo(Colour side, int eval)
@@ -30,17 +45,26 @@ namespace Eval
         return countSetBits64(occupiedBB)/32.f; // 32 = number of total pieces possible
     }
 
-    struct PawnHashTableEntry
-    {
-        int structureEval;
-        Bitboard pawnsBB = 0;
-    };
-
-    PawnHashTableEntry* pawnHashTable;
-    const int PAWN_HASH_TABLE_SIZE = 1000000;
     void initPawnHashTable()
     {
         pawnHashTable = new PawnHashTableEntry[PAWN_HASH_TABLE_SIZE];
+    }
+
+    void initDistFromTable()
+    {
+        for (int from = 0; from < 64; from++)
+            for (int to = 0; to < 64; to++)
+            {
+                int rowDist = abs((from % 8) - (to % 8));
+                int columnDist = abs((from / 8) - (to / 8));
+                distFromTable[from][to] = rowDist + columnDist;
+            }
+    }
+
+    void init()
+    {
+        initPawnHashTable();
+        initDistFromTable();
     }
 
     // calculates the value of a pawn based on its structure
@@ -54,18 +78,18 @@ namespace Eval
         if (pawnHashTable[hashEntryIndex].pawnsBB == friendlyPawnsBB)
             return pawnHashTable[hashEntryIndex].structureEval;
 
-        int structureEval = 0;
+        int structureValue = 0;
         for (int square = 0; square < 64; square++)
         {
             if (BB::boardSquares[square] & friendlyPawnsBB)
             {
                 // double/triple pawn penalty. apply when pawns are on the same file (applied per pawn. so a doubled pawn is a penalty of -10*2=-20)
                 if ((BB::fileMask[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
-                    structureEval -= DOUBLE_PAWN_PENALTY;
+                    structureValue -= PAWN_DOUBLED_PENALTY;
 
                 // isolated pawns
                 if (!(BB::adjacentFiles[square % 8] & friendlyPawnsBB))
-                    structureEval -= ISOLATED_PAWN_PENALTY;
+                    structureValue -= PAWN_ISOLATED_PENALTY;
                 // if the pawn is not isolated, it may be backwards
                 else
                 {
@@ -76,58 +100,116 @@ namespace Eval
                 // test speed up when using file/rank masks instead of ~file or rank clears
                 // passed pawns
                 if (!((BB::adjacentFiles[square % 8] | BB::fileMask[square % 8]) & enemyPawnsBB))
-                    structureEval += PASSED_PAWN_BONUS;
+                    structureValue += PAWN_PASSED_BONUS;
             }
         }
         
         pawnHashTable[hashEntryIndex].pawnsBB          = friendlyPawnsBB;
-        pawnHashTable[hashEntryIndex].structureEval    = structureEval;
+        pawnHashTable[hashEntryIndex].structureEval    = structureValue;
 
-        return structureEval;
+        return structureValue;
     }
 
-    int kingMidgameStructureValue(int square, Bitboard friendlyPiecesBB)
+    int whiteKingShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
     {
-        // note that the piece square tables already accomodate for pawn shields in the midgame
-        int value = 0;
-
-        // open file next to king. this currently only goes if both files are open. change this so that it isn't checking
-        // if there are TWO (2) adjacent files that are open. make a new array, eastFile and westFile in Bitboard.h to do so
-        // or, if the king HIMSELF is on the open file
-        if (!(BB::adjacentFiles[square % 8] & friendlyPiecesBB))
+        int shieldValue = 0;
+        // long castle
+        if (kingSquare < ChessCoord::E1)
         {
-            std::cout << "hit\n";
-            //value -= 50;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+        // short castle
+        else if (kingSquare > ChessCoord::E1)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
         }
 
-       return value;
+        return shieldValue;
     }
 
-    int kingStructureValue(int square, int pstIndex, Bitboard friendlyPiecesBB, float midgameValue)
+    int blackShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
     {
-        int midgameValueScaled = pst::midgameKingTable[pstIndex] * midgameValue + kingMidgameStructureValue(square, friendlyPiecesBB) * midgameValue;
+        int shieldValue = 0;
+        // long castle
+        if (kingSquare < ChessCoord::E8)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::B6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::C7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+        // short castle
+        else if (kingSquare > ChessCoord::E8)
+        {
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::G6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+            if (friendlyPawnsBB & BB::boardSquares[ChessCoord::F7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
+        }
+
+        return shieldValue;
+    }
+
+    int kingMidgameStructureValue(int square, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB)
+    {
+        // note that the piece square tables already accomodate for pawn shields in the midgame
+        int structureValue = 0;
+
+        // open file next to king
+        if (square % 8 > 0)
+        {
+            if (!(BB::westFile[square % 8] & friendlyPiecesBB))
+                structureValue -= KING_MIDGAME_OPEN_FILE_PENALTY;
+        }
+        if (square % 8 < 7)
+        {
+            if (!(BB::eastFile[square % 8] & friendlyPiecesBB))
+                structureValue -= KING_MIDGAME_OPEN_FILE_PENALTY;
+        }
+
+        // pawn shield
+        structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackShieldValue(square, friendlyPawnsBB);
+
+       return structureValue;
+    }
+
+    int kingStructureValue(int square, int pstIndex, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB, float midgameValue)
+    {
+        int midgameValueScaled = pst::midgameKingTable[pstIndex]
+                                 * midgameValue + 
+                                 kingMidgameStructureValue(square, side, friendlyPiecesBB, friendlyPawnsBB)
+                                 * midgameValue;
         int endgameValueScaled = pst::endgameKingTable[pstIndex] * (1 - midgameValue);
         return midgameValueScaled + endgameValueScaled;
-
     }
 
     inline int rookStructureValue(int square, Bitboard occupiedBB, Bitboard friendlyPiecesBB, Bitboard enemyPiecesBB, Bitboard friendlyRooksBB)
     {
         Bitboard bitsSetInFile = BB::fileMask[square % 8] & ~BB::boardSquares[square];
-        int value = 0;
+        int structureValue = 0;
 
         // rooks are connected
         if (MoveGeneration::computePseudoRookMoves(square, friendlyPiecesBB | enemyPiecesBB, friendlyPiecesBB) & friendlyRooksBB)
-            value += 10;
+            structureValue += 10;
         
         // open file
         if (!(bitsSetInFile & occupiedBB))
-            value += ROOK_OPEN_FILE_BONUS;
+            structureValue += ROOK_OPEN_FILE_BONUS;
         else // potentially a half-open file
-            if ((bitsSetInFile & friendlyPiecesBB) && !(bitsSetInFile & enemyPiecesBB))
-                value += ROOK_HALF_OPEN_FILE_BONUS;
+            if (!(bitsSetInFile & friendlyPiecesBB) && (bitsSetInFile & enemyPiecesBB))
+                structureValue += ROOK_HALF_OPEN_FILE_BONUS;
 
-        return value;
+        return structureValue;
     }
 
     int evaluatePosition(Board* boardPtr, float midgameValue)
@@ -153,7 +235,7 @@ namespace Eval
                 else if (BB::boardSquares[square] & position.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteKingBB)
                     // so a pawn hash table is just a transposition table but for pawn structures??
-                    whiteEval += KING_VALUE + kingStructureValue(square, 63 - square, boardPtr->currentPosition.whitePiecesBB, midgameValue);
+                    whiteEval += KING_VALUE + kingStructureValue(square, 63 - square, SIDE_WHITE, position.whitePiecesBB, position.whitePawnsBB, midgameValue);
             }
             else // piece is black
             {
@@ -163,7 +245,7 @@ namespace Eval
                 else if (BB::boardSquares[square] & position.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square] + rookStructureValue(square, position.occupiedBB, position.blackPiecesBB, position.whitePiecesBB, position.blackRooksBB);
                 else if (BB::boardSquares[square] & position.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
                 else if (BB::boardSquares[square] & position.blackKingBB)
-                    blackEval += KING_VALUE + kingStructureValue(square, square, boardPtr->currentPosition.blackPiecesBB, midgameValue);
+                    blackEval += KING_VALUE + kingStructureValue(square, square, SIDE_BLACK, position.blackPiecesBB, position.blackPawnsBB, midgameValue);
             }
         }
         

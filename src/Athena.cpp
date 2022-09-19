@@ -24,7 +24,7 @@ const bool CANNOT_NULL_MOVE = false;
 Athena::Athena()
 {   
     mDepth = 9;
-    mMaxPly = 15;
+    mMaxPly = 20;
    // mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
    // clearTranspositionTable();
 

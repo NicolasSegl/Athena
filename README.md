@@ -17,6 +17,5 @@ Athena is a work-in-progress UCI compatible chess engine.
 * Principal Variation Search
 * History Heuristic
 
-
 # Misc
 If you want Athena to use her own opening book, make sure that '/books/' is in her current working directory.

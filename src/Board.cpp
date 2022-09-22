@@ -198,8 +198,7 @@ void Board::init()
 	BB::initialize();
 	MoveGeneration::init();
 
-	mZobristKeyGenerator.initHashKeys();
-	mCurrentZobristKey = mZobristKeyGenerator.generateKey(&currentPosition);
+	mCurrentZobristKey = ZobristKey::generate(&currentPosition);
 }
 
 // set the basic move data (origin/target square, colour bitboard, and piece bitboard) of the two moves made during a castle move
@@ -530,11 +529,11 @@ bool Board::makeMove(MoveData* moveData)
 			currentPosition.fiftyMoveCounter++;
 
 		currentPosition.sideToMove = !currentPosition.sideToMove;
-		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
+		mCurrentZobristKey = ZobristKey::update(mCurrentZobristKey, &currentPosition, moveData);
 		insertMoveIntoHistory(++mPly);
 	}
 	else
-		mCurrentZobristKey = mZobristKeyGenerator.updateKey(mCurrentZobristKey, &currentPosition, moveData);
+		mCurrentZobristKey = ZobristKey::update(mCurrentZobristKey, &currentPosition, moveData);
 
 	return true;
 }

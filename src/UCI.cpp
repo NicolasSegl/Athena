@@ -6,6 +6,7 @@
 #include "MoveGeneration.h"
 #include "UCI.h"
 #include "utils.h"
+#include "ZobristKey.h"
 
 // response to "uci" command
 void UCI::respondUCI()
@@ -28,6 +29,7 @@ void UCI::respondIsReady()
 	MoveGeneration::init();
 	initBitsSetTable();
     Eval::init();
+	ZobristKey::init();
 	std::cout << "readyok\n";
 }
 

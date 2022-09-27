@@ -51,6 +51,7 @@ private:
 								  short eval, 
 								  int beta, 
 								  int ogAlpha);
+    int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta);
     
 	int mDepth;
     Colour mSide;
@@ -60,7 +61,16 @@ private:
     int mMaxPly;
     Board* boardPtr;
     
-    int negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove);
+    int negamax
+        (
+        int depth, 
+        Colour side, 
+        int alpha, 
+        int beta, 
+        Byte ply, 
+        MoveData* lastMove, 
+        bool canNullMove
+        );
     int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 
     void assignMoveScores(std::vector<MoveData>& moves, Byte ply);

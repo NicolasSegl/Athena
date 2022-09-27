@@ -43,10 +43,14 @@ private:
     MoveData** mKillerMoves;
     void insertKillerMove(MoveData& move, Byte ply);
 
-    int mTranspositionTableSize = 20000000;
     TranspositionHashEntry* mTranspositionTable;
     void clearTranspositionTable();
-    void insertTranspositionEntry(TranspositionHashEntry* hashEntry, int maxEval, int ogAlpha, int beta);
+    void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
+								  MoveData* bestMove, 
+								  Byte depth, 
+								  short eval, 
+								  int beta, 
+								  int ogAlpha);
     
 	int mDepth;
     Colour mSide;

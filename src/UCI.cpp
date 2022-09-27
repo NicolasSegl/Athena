@@ -6,6 +6,7 @@
 #include "MoveGeneration.h"
 #include "UCI.h"
 #include "utils.h"
+#include "ZobristKey.h"
 
 // response to "uci" command
 void UCI::respondUCI()
@@ -28,6 +29,8 @@ void UCI::respondIsReady()
 	MoveGeneration::init();
 	initBitsSetTable();
     Eval::init();
+	ZobristKey::init();
+	mCG.init();
 	std::cout << "readyok\n";
 }
 
@@ -99,8 +102,6 @@ void UCI::processCommand(const std::string& commandString)
 // may have to multithread so we can accept commands while Athena looks for a move
 void UCI::run()
 {
-	mCG.init();
-
 	while (true)
 	{
 		std::string uciInput;

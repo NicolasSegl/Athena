@@ -27,6 +27,6 @@ add_executable(Athena
                 src/utils.cpp
                 src/UCI.h
                 src/UCI.cpp
-                src/ZobristKeyGenerator.h
-                src/ZobristKeyGenerator.cpp
+                src/ZobristKey.h
+                src/ZobristKey.cpp
 )

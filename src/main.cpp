@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 // static exchange evaluation
 // TRANSPOSITION TABLE
 // change the MoveData::Encoding bits flag so it's actually a bit flag
-// rename zobristkeygenerator
+// rename ZobristKey
 // put more things in Constants.h?
 // make structs/classes smaller in size
 // add delta pruning

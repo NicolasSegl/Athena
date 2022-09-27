@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MoveData.h"
-#include "ZobristKeyGenerator.h"
+#include "ZobristKey.h"
 
 struct TranspositionHashEntry
 {
@@ -13,9 +13,9 @@ struct TranspositionHashEntry
 		UPPER_BOUND,
 	};
 
-	ZobristKey zobristKey;
+	ZobristKey::zkey zobristKey;
 	MoveData bestMove;
-	short depth;
-	int eval;
+	Byte depth;
+	short eval;
 	Byte hashFlag;
 };

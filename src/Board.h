@@ -7,7 +7,7 @@
 #include "ChessPosition.h"
 #include "MoveData.h"
 #include "MoveGeneration.h"
-#include "ZobristKeyGenerator.h"
+#include "ZobristKey.h"
 
 class Board
 {    
@@ -16,8 +16,7 @@ private:
 	std::vector<MoveData> mBlackMoves;
 
 	uint64_t mCurrentZobristKey;
-	ZobristKeyGenerator mZobristKeyGenerator;
-	ZobristKey mZobristKeyHistory[1000];
+	ZobristKey::zkey mZobristKeyHistory[1000];
 
 	short mPly;
 
@@ -62,7 +61,7 @@ public:
 	// for static search evaluation
 	void getLeastValuableAttacker(Byte square, Colour attackingSide, int* pieceValue, Bitboard** pieceBB, Bitboard* attackingPiecesBB);
 
-	ZobristKey* getZobristKeyHistory()				{ return mZobristKeyHistory;							 }
+	ZobristKey::zkey* getZobristKeyHistory()		{ return mZobristKeyHistory;							 }
 	short getCurrentPly()							{ return mPly;											 }
 	short getFiftyMoveCounter()					    { return currentPosition.fiftyMoveCounter;				 }
 	std::vector<MoveData>& getMovesRef(Colour side) { return side == SIDE_WHITE ? mWhiteMoves : mBlackMoves; }

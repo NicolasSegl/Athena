@@ -109,11 +109,14 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set side to move and adjust current ply (using the total number of full moves at the end of the FEN data)
 	if (dataVec[FenDataFields::SIDE_TO_PLAY][0] == 'w')
 	{
-		mPly = -1; // so that when we add 2 times the number of full moves, we get the proper ply if the side to move is white
+		mPly = -2; // so that when we add 2 times the number of full moves, we get the proper ply if the side to move is white
 		currentPosition.sideToMove = SIDE_WHITE;
 	}
 	else
+	{
+		mPly = -1;
 		currentPosition.sideToMove = SIDE_BLACK;
+	}
 
 	// set castle privileges 
 	for (int character = 0; character < dataVec[FenDataFields::CASTLE_PRIVILEGES].size(); character++)

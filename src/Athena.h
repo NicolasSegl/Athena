@@ -69,7 +69,8 @@ private:
         int beta, 
         Byte ply, 
         MoveData* lastMove, 
-        bool canNullMove
+        bool canNullMove,
+        bool isReducedSearch
         );
     int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 

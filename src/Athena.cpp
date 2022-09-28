@@ -25,7 +25,7 @@ const bool CANNOT_NULL_MOVE = false;
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
-    mDepth = 2;
+    mDepth = 8;
     mMaxPly = 20;
     mTranspositionTable = new TranspositionHashEntry[TRANSPOSITION_TABLE_SIZE];
     clearTranspositionTable();
@@ -57,7 +57,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
 
     auto beforeTime = std::chrono::steady_clock::now();
-    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE) << std::endl;
+    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE, false) << std::endl;
     auto afterTime = std::chrono::steady_clock::now();
     std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - beforeTime).count() << std::endl;
     std::cout << "num of nodes: " << mNodes << std::endl;
@@ -345,16 +345,14 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 }
 
 // alpha is the lower bound for a move's evaluation, beta is the upper bound for a move's evaluation
-int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove)
+int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove, bool isReducedSearch)
 {
 	// since the zobrist key is the same as it was when we exited. wait no, we should have made the move?
 	// is the zobrist key just not getting updated?
 	ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
 	int ttData = readTranspositionEntry(positionZKey, depth, alpha, beta);
 	if (ttData != NO_TT_DATA)
-	{
-		std::cout << "hit\n";
-	}
+        return ttData;
 
     // OR INSUFFICIENT MATERIAL DRAW
     if (Outcomes::isDraw(boardPtr))
@@ -395,7 +393,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         // notice that we pass in -beta, -beta+1 instead of -beta, -alpha
         // this sets the upper bound to being just 1 greater than the lower bound
         // meaning that any move that is better than the lower bound by just a single point will cause a cutoff
-        int eval = -negamax(depth - 1 - 2, !side, -beta, -beta+1, ply + 1, lastMove, false);
+        int eval = -negamax(depth - 1 - 2, !side, -beta, -beta+1, ply + 1, lastMove, false, true);
         // if, without making any move, the evaluation comes back and is STILL better than the current worst move, make a cutoff
         if (eval >= beta)
             return eval;
@@ -430,7 +428,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             */
             int eval;
             if (!foundPVMove)
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE);
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, false);
             else
             {
                 /*
@@ -439,9 +437,9 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
                     if it is possible (the evaluation is greater than our current alpha), then research the whole tree to find the new
                     best move (PV move)
                 */
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE);
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, true);
                 if (eval > alpha)
-                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE);
+                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, false);
             }
 
             boardPtr->unmakeMove(&moves[i]);
@@ -475,7 +473,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         }
     }
 
-	insertTranspositionEntry(positionZKey, bestMove, depth, maxEval, beta, ogAlpha);
+    if (!isReducedSearch)
+	    insertTranspositionEntry(positionZKey, bestMove, depth, maxEval, beta, ogAlpha);
 
     // if no moves went through at all (which would result in maxEval == -inf)
     if (maxEval == -INF)

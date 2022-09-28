@@ -14,6 +14,7 @@ const int INF = std::numeric_limits<int>::max();
 
 // move ordering constants
 const int MVV_LVA_OFFSET = 10000000;
+const int TT_MOVE_SCORE = 10000;
 const int KILLER_MOVE_SCORE = 10;
 const int MAX_KILLER_MOVES = 2;
 
@@ -25,7 +26,7 @@ const bool CANNOT_NULL_MOVE = false;
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
-    mDepth = 8;
+    mDepth = 10;
     mMaxPly = 20;
     mTranspositionTable = new TranspositionHashEntry[TRANSPOSITION_TABLE_SIZE];
     clearTranspositionTable();
@@ -153,8 +154,16 @@ int Athena::pieceValueTo_MVV_LVA_Index(int value)
     }
 }
 
-void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply)
+void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey)
 {
+    // order the move from the transposition table (if it exists) above all other moves
+    int tableIndex = zkey % TRANSPOSITION_TABLE_SIZE;
+    if (mTranspositionTable[tableIndex].zobristKey == zkey && 
+        mTranspositionTable[tableIndex].bestMoveIndex >= 0)
+        {
+           // moves[mTranspositionTable[tableIndex].bestMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+        }
+    
     for (int i = 0; i < moves.size(); i++)
     {
         if (moves[i].capturedPieceBB) // move is violent
@@ -211,7 +220,7 @@ int Athena::calculateExtension(Colour side, Byte kingSquare)
 
 // the zobrist key should be considering who is moving?
 void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey, 
-									  MoveData* bestMove, 
+									  int bestMoveIndex, 
 									  Byte depth, 
 									  short eval, 
 									  int beta, 
@@ -251,10 +260,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 	currentEntry->depth = depth;
 	currentEntry->zobristKey = zobristKey;
 
-	if (bestMove)
-		currentEntry->bestMove = *bestMove;
-	else
-		currentEntry->bestMove.setMoveType(MoveData::EncodingBits::INVALID);
+	currentEntry->bestMoveIndex = bestMoveIndex;
 }
 
 // when reading data from the TT, we need to compare zkeys
@@ -319,7 +325,9 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 
     std::vector<MoveData> moves;
     MoveGeneration::calculateSideMoves(boardPtr, side, moves, true);
-    assignMoveScores(moves, ply);
+
+    ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
+    assignMoveScores(moves, ply, positionZKey);
 
     for (int i = 0; i < moves.size(); i++)
     {
@@ -402,13 +410,13 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     // used for determining the transposition table entry's flag for this call to negamax
     int ogAlpha = alpha; 
 	
-	MoveData* bestMove = nullptr;
+	int bestMoveIndex = -1;
 
     std::vector<MoveData> moves;
     MoveGeneration::calculateSideMoves(boardPtr, side, moves, false);
 
     int maxEval = -INF;
-    assignMoveScores(moves, ply);
+    assignMoveScores(moves, ply, positionZKey);
 
     bool foundPVMove = false;
     for (int i = 0; i < moves.size(); i++)
@@ -452,7 +460,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 			if (eval > maxEval)
 			{
 				maxEval = eval;
-				bestMove = &moves[i];
+				bestMoveIndex = i;
 			}
 
             if (eval > alpha)
@@ -474,7 +482,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     }
 
     if (!isReducedSearch)
-	    insertTranspositionEntry(positionZKey, bestMove, depth, maxEval, beta, ogAlpha);
+	    insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, beta, ogAlpha);
 
     // if no moves went through at all (which would result in maxEval == -inf)
     if (maxEval == -INF)

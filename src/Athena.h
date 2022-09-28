@@ -46,7 +46,7 @@ private:
     TranspositionHashEntry* mTranspositionTable;
     void clearTranspositionTable();
     void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
-								  MoveData* bestMove, 
+								  int bestMoveIndex, 
 								  Byte depth, 
 								  short eval, 
 								  int beta, 
@@ -74,7 +74,7 @@ private:
         );
     int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 
-    void assignMoveScores(std::vector<MoveData>& moves, Byte ply);
+    void assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
     int calculateExtension(Colour side, Byte kingSquare);
     

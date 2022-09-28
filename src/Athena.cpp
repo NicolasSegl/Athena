@@ -467,7 +467,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             {
                 alpha = eval;
                 foundPVMove = true;
-                mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare] += depth * depth;
+                if (!moves[i].capturedPieceBB)
+                    mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare] += depth * depth;
             }
 
             if (beta <= alpha)

@@ -95,6 +95,7 @@ namespace ZobristKey
 			else if (*pieceBB & chessPosition->blackKingBB)	   return pieceHashKeys[BLACK_KING][square];
 		}
 	}
+
 	zkey generate(ChessPosition* chessPosition)
 	{
 		zkey zobristKey = 0;
@@ -103,7 +104,6 @@ namespace ZobristKey
 		{
 			if (BB::boardSquares[square] & chessPosition->emptyBB) continue;
 
-			zobristKey ^= getPieceHashKeyForGeneration(chessPosition, square);
 			zobristKey ^= getPieceHashKeyForGeneration(chessPosition, square);
 		}
 

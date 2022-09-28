@@ -137,9 +137,12 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set the current ply
 	mPly += 2 * std::stoi(dataVec[FenDataFields::NUM_FULL_MOVES]);
 
-	insertMoveIntoHistory(mPly);
-
+	// set the bits on all other additional bitboards for the current position (like the occupied bitboard or the white pieces bitboard)
 	setAuxillaryBitboards();
+
+	// generate a new zobrist key based off of the position and insert it into the move history at the current ply
+	mCurrentZobristKey = ZobristKey::generate(&currentPosition);
+	insertMoveIntoHistory(mPly);
 }
 
 // make a move formatted long algebraic notation (for uci purposes)
@@ -200,8 +203,6 @@ void Board::init()
 {
 	BB::initialize();
 	MoveGeneration::init();
-
-	mCurrentZobristKey = ZobristKey::generate(&currentPosition);
 }
 
 // set the basic move data (origin/target square, colour bitboard, and piece bitboard) of the two moves made during a castle move

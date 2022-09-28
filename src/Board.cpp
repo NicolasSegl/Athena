@@ -326,7 +326,9 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 // loop through the board until the square of the king is found
 Byte Board::computeKingSquare(Bitboard kingBB)
 {
-	return BB::getLSB(kingBB);
+	if (kingBB)
+		return BB::getLSB(kingBB);
+	return 0;
 }
 
 /* 

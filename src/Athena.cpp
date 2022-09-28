@@ -26,7 +26,7 @@ const bool CANNOT_NULL_MOVE = false;
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
 {   
-    mDepth = 10;
+    mDepth = 8;
     mMaxPly = 20;
     mTranspositionTable = new TranspositionHashEntry[TRANSPOSITION_TABLE_SIZE];
     clearTranspositionTable();
@@ -157,12 +157,15 @@ int Athena::pieceValueTo_MVV_LVA_Index(int value)
 void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey)
 {
     // order the move from the transposition table (if it exists) above all other moves
-    int tableIndex = zkey % TRANSPOSITION_TABLE_SIZE;
-    if (mTranspositionTable[tableIndex].zobristKey == zkey && 
-        mTranspositionTable[tableIndex].bestMoveIndex >= 0)
-        {
-           // moves[mTranspositionTable[tableIndex].bestMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
-        }
+    // also see if the depth is greater than our current ?
+    if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
+    { 
+        int ttMoveIndex = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveIndex;
+        if (ttMoveIndex >= 0)
+            {
+                //moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+            }
+    }
     
     for (int i = 0; i < moves.size(); i++)
     {
@@ -232,11 +235,11 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
         if there exists a position at this index already, we need to see if we should replace it
         if our current entry has searched further, then we will replace the current table entry
     */
-  //  if (currentEntry->zobristKey)
+    if (currentEntry->zobristKey)
     {
 		// the higher the depth, the further the node has been searched
-     //   if (currentEntry->depth > depth)
-	//		return; // if not too old, then return (i.e. do not replace)
+        if (currentEntry->depth >= depth)
+			return; // if not too old, then return (i.e. do not replace)
     }
 
 	// now replace the data in the current entry
@@ -259,7 +262,6 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 
 	currentEntry->depth = depth;
 	currentEntry->zobristKey = zobristKey;
-
 	currentEntry->bestMoveIndex = bestMoveIndex;
 }
 
@@ -359,8 +361,11 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 	// is the zobrist key just not getting updated?
 	ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
 	int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
-	if (ttScore != NO_TT_SCORE)
+	if (ttScore != NO_TT_SCORE && !isReducedSearch)
+    {
+        std::cout << "hit with zkey: " << positionZKey << std::endl;
         return ttScore;
+    }
 
     // OR INSUFFICIENT MATERIAL DRAW
     if (Outcomes::isDraw(boardPtr))
@@ -421,7 +426,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     bool foundPVMove = false;
     for (int i = 0; i < moves.size(); i++)
     {
-        selectMove(moves, i); // swaps current move with the most likely good move in the move list
+        selectMove(moves, i); // swaps current move with the `most likely good move in the move list
         
         // if makemove is legal (i.e. wouldn't result in a check)
         if (boardPtr->makeMove(&moves[i]))

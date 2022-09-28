@@ -1,3 +1,4 @@
+#include <iostream>
 #include <random>
 
 #include "DataTypes.h"
@@ -30,7 +31,7 @@ namespace ZobristKey
 
 	uint64_t getRandom64()
 	{
-		return (rand()) | (rand() << 16) | ((uint64_t)rand() << 32) | ((uint64_t)rand() << 48);
+		return (rand()) | ((uint64_t)rand() << 16) | ((uint64_t)rand() << 32) | ((uint64_t)rand() << 48);
 	}
 
 	void init()
@@ -51,24 +52,56 @@ namespace ZobristKey
 
 	uint64_t getPieceHashKey(ChessPosition* chessPosition, Byte square)
 	{
+		uint64_t hashkey = 0;
+
 		if (BB::boardSquares[square] & chessPosition->whitePiecesBB)
 		{
-			if	    (BB::boardSquares[square] & chessPosition->whitePawnsBB)   return pieceHashKeys[WHITE_PAWN][square];
-			else if (BB::boardSquares[square] & chessPosition->whiteRooksBB)   return pieceHashKeys[WHITE_ROOK][square];
-			else if (BB::boardSquares[square] & chessPosition->whiteBishopsBB) return pieceHashKeys[WHITE_BISHOP][square];
-			else if (BB::boardSquares[square] & chessPosition->whiteQueensBB)  return pieceHashKeys[WHITE_QUEEN][square];
-			else if (BB::boardSquares[square] & chessPosition->whiteKnightsBB) return pieceHashKeys[WHITE_KNIGHT][square];
-			else if (BB::boardSquares[square] & chessPosition->whiteKingBB)	   return pieceHashKeys[WHITE_KING][square];
+			if	    (BB::boardSquares[square] & chessPosition->whitePawnsBB)   hashkey |=  pieceHashKeys[WHITE_PAWN][square];
+			else if (BB::boardSquares[square] & chessPosition->whiteRooksBB)   hashkey |=  pieceHashKeys[WHITE_ROOK][square];
+			else if (BB::boardSquares[square] & chessPosition->whiteBishopsBB) hashkey |=  pieceHashKeys[WHITE_BISHOP][square];
+			else if (BB::boardSquares[square] & chessPosition->whiteQueensBB)  hashkey |=  pieceHashKeys[WHITE_QUEEN][square];
+			else if (BB::boardSquares[square] & chessPosition->whiteKnightsBB) hashkey |=  pieceHashKeys[WHITE_KNIGHT][square];
+			else if (BB::boardSquares[square] & chessPosition->whiteKingBB)	   hashkey |=  pieceHashKeys[WHITE_KING][square];
 		}
-		else // the occupied square is a black piece...
+
+		if (BB::boardSquares[square] & chessPosition->blackPiecesBB)
 		{
-			if		(BB::boardSquares[square] & chessPosition->blackPawnsBB)   return pieceHashKeys[BLACK_PAWN][square];
-			else if (BB::boardSquares[square] & chessPosition->blackRooksBB)   return pieceHashKeys[BLACK_ROOK][square];
-			else if (BB::boardSquares[square] & chessPosition->blackBishopsBB) return pieceHashKeys[BLACK_BISHOP][square];
-			else if (BB::boardSquares[square] & chessPosition->blackQueensBB)  return pieceHashKeys[BLACK_QUEEN][square];
-			else if (BB::boardSquares[square] & chessPosition->blackKnightsBB) return pieceHashKeys[BLACK_KNIGHT][square];
-			else if (BB::boardSquares[square] & chessPosition->blackKingBB)	   return pieceHashKeys[BLACK_KING][square];
+			if		(BB::boardSquares[square] & chessPosition->blackPawnsBB)   hashkey |=  pieceHashKeys[BLACK_PAWN][square];
+			else if (BB::boardSquares[square] & chessPosition->blackRooksBB)   hashkey |=  pieceHashKeys[BLACK_ROOK][square];
+			else if (BB::boardSquares[square] & chessPosition->blackBishopsBB) hashkey |=  pieceHashKeys[BLACK_BISHOP][square];
+			else if (BB::boardSquares[square] & chessPosition->blackQueensBB)  hashkey |=  pieceHashKeys[BLACK_QUEEN][square];
+			else if (BB::boardSquares[square] & chessPosition->blackKnightsBB) hashkey |=  pieceHashKeys[BLACK_KNIGHT][square];
+			else if (BB::boardSquares[square] & chessPosition->blackKingBB)	   hashkey |=  pieceHashKeys[BLACK_KING][square];
 		}
+
+		return hashkey;
+	}
+
+	uint getPieceHashKey(ChessPosition* chessPosition, Bitboard* pieceBB, Byte square)
+	{
+		uint64_t hashkey = 0;
+
+		if (*pieceBB & chessPosition->whitePiecesBB)
+		{
+			if	    (*pieceBB & chessPosition->whitePawnsBB)   hashkey |=  pieceHashKeys[WHITE_PAWN][square];
+			else if (*pieceBB & chessPosition->whiteRooksBB)   hashkey |=  pieceHashKeys[WHITE_ROOK][square];
+			else if (*pieceBB & chessPosition->whiteBishopsBB) hashkey |=  pieceHashKeys[WHITE_BISHOP][square];
+			else if (*pieceBB & chessPosition->whiteQueensBB)  hashkey |=  pieceHashKeys[WHITE_QUEEN][square];
+			else if (*pieceBB & chessPosition->whiteKnightsBB) hashkey |=  pieceHashKeys[WHITE_KNIGHT][square];
+			else if (*pieceBB & chessPosition->whiteKingBB)	   hashkey |=  pieceHashKeys[WHITE_KING][square];
+		}
+
+		if (*pieceBB & chessPosition->blackPiecesBB)
+		{
+			if		(*pieceBB & chessPosition->blackPawnsBB)   hashkey |=  pieceHashKeys[BLACK_PAWN][square];
+			else if (*pieceBB & chessPosition->blackRooksBB)   hashkey |=  pieceHashKeys[BLACK_ROOK][square];
+			else if (*pieceBB & chessPosition->blackBishopsBB) hashkey |=  pieceHashKeys[BLACK_BISHOP][square];
+			else if (*pieceBB & chessPosition->blackQueensBB)  hashkey |=  pieceHashKeys[BLACK_QUEEN][square];
+			else if (*pieceBB & chessPosition->blackKnightsBB) hashkey |=  pieceHashKeys[BLACK_KNIGHT][square];
+			else if (*pieceBB & chessPosition->blackKingBB)	   hashkey |=  pieceHashKeys[BLACK_KING][square];
+		}
+
+		return hashkey;
 	}
 
 	zkey generate(ChessPosition* chessPosition)
@@ -92,12 +125,17 @@ namespace ZobristKey
 
 	zkey update(zkey zobristKey, ChessPosition* chessPosition, MoveData* moveData)
 	{
-		zobristKey ^= getPieceHashKey(chessPosition, moveData->originSquare);
-		zobristKey ^= getPieceHashKey(chessPosition, moveData->targetSquare);
-		
-		// update the zobrist key if there was a piece taken which no longer would exist on the board
+		// std::cout << "before anything: " << zobristKey << std::endl;
+		if (moveData->pieceBB)
+		{
+			zobristKey = zobristKey ^ getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare);
+			std::cout << "hash key = " << getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare) 
+					  << "xored: " << (zobristKey ^ getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare)) << std::endl;
+			zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->targetSquare);
+			// std::cout << "after target square: " << zobristKey << std::endl;
+		}
 		if (moveData->capturedPieceBB)
-			zobristKey ^= getPieceHashKey(chessPosition, moveData->targetSquare);
+			zobristKey ^= getPieceHashKey(chessPosition, moveData->capturedPieceBB, moveData->targetSquare);
 
 		zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
 		zobristKey ^= enpassantHashKeys[chessPosition->enPassantSquare];

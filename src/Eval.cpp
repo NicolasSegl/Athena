@@ -267,7 +267,7 @@ namespace Eval
             return -currentSquareValue;
         else
         {
-            if (pieceValue < currentSquareValue)
+            if (pieceValue < currentSquareValue || !attacksToSquareBB)
                 return currentSquareValue - pieceValue; // exchange is winning
             else
             {

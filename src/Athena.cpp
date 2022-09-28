@@ -259,7 +259,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 
 // when reading data from the TT, we need to compare zkeys
 // also, replace based on age AND depth
-const int NO_TT_DATA = -9999999;
+const int NO_TT_SCORE = -9999999;
 int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta)
 {
 	TranspositionHashEntry* hashEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
@@ -273,7 +273,7 @@ int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int a
 			return hashEntry->eval;
 	}
 
-	return NO_TT_DATA;
+	return NO_TT_SCORE;
 }
 
 int Athena::getPieceValue(PieceTypes pieceType)
@@ -350,9 +350,9 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 	// since the zobrist key is the same as it was when we exited. wait no, we should have made the move?
 	// is the zobrist key just not getting updated?
 	ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
-	int ttData = readTranspositionEntry(positionZKey, depth, alpha, beta);
-	if (ttData != NO_TT_DATA)
-        return ttData;
+	int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
+	if (ttScore != NO_TT_SCORE)
+        return ttScore;
 
     // OR INSUFFICIENT MATERIAL DRAW
     if (Outcomes::isDraw(boardPtr))

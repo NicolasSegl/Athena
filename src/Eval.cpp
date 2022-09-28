@@ -21,7 +21,7 @@ namespace Eval
 
     // king midgame structure values
     const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
-    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 10;
+    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 0;//1;
 
     // pawn hash table 
     struct PawnHashTableEntry

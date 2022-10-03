@@ -135,7 +135,7 @@ namespace Eval
         return shieldValue;
     }
 
-    int blackShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
+    int blackKingShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
     {
         int shieldValue = 0;
         // long castle
@@ -178,7 +178,7 @@ namespace Eval
         }
 
         // pawn shield
-        structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackShieldValue(square, friendlyPawnsBB);
+        structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackKingShieldValue(square, friendlyPawnsBB);
 
        return structureValue;
     }

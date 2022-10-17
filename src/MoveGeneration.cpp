@@ -366,7 +366,7 @@ namespace MoveGeneration
         return nullptr;
     }
 
-    void getPieceData(Board* boardPtr, Bitboard** pieceBB, Byte* pieceValue, Byte square, Colour side)
+    void getPieceData(Board* boardPtr, Bitboard** pieceBB, int* pieceValue, Byte square, Colour side)
     {
         Bitboard squareBB = BB::boardSquares[square];
 

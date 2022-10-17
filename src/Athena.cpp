@@ -161,10 +161,10 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
     if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
     { 
         int ttMoveIndex = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveIndex;
-        if (ttMoveIndex >= 0)
-            {
-               // moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
-            }
+        if (ttMoveIndex >= 0 && ttMoveIndex < moves.size())
+        {
+            moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+        }
     }
     
     for (int i = 0; i < moves.size(); i++)

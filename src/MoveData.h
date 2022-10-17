@@ -46,8 +46,8 @@ struct MoveData
     // only a byte long because they are only 0-63
     Byte originSquare;
     Byte targetSquare;
-    Byte pieceValue;
-    Byte capturedPieceValue;
+    int pieceValue;
+    int capturedPieceValue;
 
     // castling rights, en passant, half-move counter... etc https://www.chessprogramming.org/Encoding_Moves
     EncodingBits moveType = EncodingBits::INVALID;

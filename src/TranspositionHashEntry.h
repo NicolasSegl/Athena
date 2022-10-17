@@ -13,9 +13,9 @@ struct TranspositionHashEntry
 		UPPER_BOUND,
 	};
 
-	ZobristKey::zkey zobristKey;
-	MoveData bestMove;
-	Byte depth;
-	short eval;
-	Byte hashFlag;
+	ZobristKey::zkey zobristKey = 0;
+	int bestMoveIndex = -1;
+	int depth;
+	int eval;
+	Byte hashFlag = HashFlagValues::NONEXISTENT;
 };

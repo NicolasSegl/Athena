@@ -46,11 +46,12 @@ private:
     TranspositionHashEntry* mTranspositionTable;
     void clearTranspositionTable();
     void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
-								  MoveData* bestMove, 
-								  Byte depth, 
-								  short eval, 
+								  int bestMoveIndex, 
+								  int depth, 
+                                  int eval,
 								  int beta, 
 								  int ogAlpha);
+    int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta);
     
 	int mDepth;
     Colour mSide;
@@ -60,10 +61,20 @@ private:
     int mMaxPly;
     Board* boardPtr;
     
-    int negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove);
+    int negamax
+        (
+        int depth, 
+        Colour side, 
+        int alpha, 
+        int beta, 
+        Byte ply, 
+        MoveData* lastMove, 
+        bool canNullMove,
+        bool isReducedSearch
+        );
     int quietMoveSearch(Colour side, int alpha, int beta, Byte ply);
 
-    void assignMoveScores(std::vector<MoveData>& moves, Byte ply);
+    void assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
     int calculateExtension(Colour side, Byte kingSquare);
     

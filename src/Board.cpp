@@ -109,11 +109,14 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set side to move and adjust current ply (using the total number of full moves at the end of the FEN data)
 	if (dataVec[FenDataFields::SIDE_TO_PLAY][0] == 'w')
 	{
-		mPly = -1; // so that when we add 2 times the number of full moves, we get the proper ply if the side to move is white
+		mPly = -2; // so that when we add 2 times the number of full moves, we get the proper ply if the side to move is white
 		currentPosition.sideToMove = SIDE_WHITE;
 	}
 	else
+	{
+		mPly = -1;
 		currentPosition.sideToMove = SIDE_BLACK;
+	}
 
 	// set castle privileges 
 	for (int character = 0; character < dataVec[FenDataFields::CASTLE_PRIVILEGES].size(); character++)
@@ -134,9 +137,12 @@ void Board::setPositionFEN(const std::string& fenString)
 	// set the current ply
 	mPly += 2 * std::stoi(dataVec[FenDataFields::NUM_FULL_MOVES]);
 
-	insertMoveIntoHistory(mPly);
-
+	// set the bits on all other additional bitboards for the current position (like the occupied bitboard or the white pieces bitboard)
 	setAuxillaryBitboards();
+
+	// generate a new zobrist key based off of the position and insert it into the move history at the current ply
+	mCurrentZobristKey = ZobristKey::generate(&currentPosition);
+	insertMoveIntoHistory(mPly);
 }
 
 // make a move formatted long algebraic notation (for uci purposes)
@@ -197,8 +203,6 @@ void Board::init()
 {
 	BB::initialize();
 	MoveGeneration::init();
-
-	mCurrentZobristKey = ZobristKey::generate(&currentPosition);
 }
 
 // set the basic move data (origin/target square, colour bitboard, and piece bitboard) of the two moves made during a castle move
@@ -322,7 +326,9 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 // loop through the board until the square of the king is found
 Byte Board::computeKingSquare(Bitboard kingBB)
 {
-	return BB::getLSB(kingBB);
+	if (kingBB)
+		return BB::getLSB(kingBB);
+	return 0;
 }
 
 /* 

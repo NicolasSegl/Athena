@@ -21,7 +21,7 @@ namespace Eval
 
     // king midgame structure values
     const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
-    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 10;
+    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 0;//1;
 
     // pawn hash table 
     struct PawnHashTableEntry
@@ -135,7 +135,7 @@ namespace Eval
         return shieldValue;
     }
 
-    int blackShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
+    int blackKingShieldValue(int kingSquare, Bitboard friendlyPawnsBB)
     {
         int shieldValue = 0;
         // long castle
@@ -178,7 +178,7 @@ namespace Eval
         }
 
         // pawn shield
-        structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackShieldValue(square, friendlyPawnsBB);
+        structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackKingShieldValue(square, friendlyPawnsBB);
 
        return structureValue;
     }
@@ -267,7 +267,7 @@ namespace Eval
             return -currentSquareValue;
         else
         {
-            if (pieceValue < currentSquareValue)
+            if (pieceValue < currentSquareValue || !attacksToSquareBB)
                 return currentSquareValue - pieceValue; // exchange is winning
             else
             {

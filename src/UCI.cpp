@@ -13,7 +13,7 @@ void UCI::respondUCI()
 {
 	// identification
 	std::cout << "id name Athena\n";
-	std::cout << "id author Nicolas Seglenieks\n";
+	std::cout << "id author Nicolas f\n";
 
 	// options
 	std::cout << "option name Move Overhead type spin default 10 min 0 max 5000\n";

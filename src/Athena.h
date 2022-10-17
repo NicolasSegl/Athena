@@ -47,8 +47,8 @@ private:
     void clearTranspositionTable();
     void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
 								  int bestMoveIndex, 
-								  Byte depth, 
-								  short eval, 
+								  int depth, 
+                                  int eval,
 								  int beta, 
 								  int ogAlpha);
     int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta);

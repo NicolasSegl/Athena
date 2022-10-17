@@ -77,7 +77,7 @@ namespace ZobristKey
 		return hashkey;
 	}
 
-	uint getPieceHashKey(ChessPosition* chessPosition, Bitboard* pieceBB, Byte square)
+	uint64_t getPieceHashKey(ChessPosition* chessPosition, Bitboard* pieceBB, Byte square)
 	{
 		uint64_t hashkey = 0;
 
@@ -128,11 +128,8 @@ namespace ZobristKey
 		// std::cout << "before anything: " << zobristKey << std::endl;
 		if (moveData->pieceBB)
 		{
-			zobristKey = zobristKey ^ getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare);
-			std::cout << "hash key = " << getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare) 
-					  << "xored: " << (zobristKey ^ getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare)) << std::endl;
+			zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare);
 			zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->targetSquare);
-			// std::cout << "after target square: " << zobristKey << std::endl;
 		}
 		if (moveData->capturedPieceBB)
 			zobristKey ^= getPieceHashKey(chessPosition, moveData->capturedPieceBB, moveData->targetSquare);

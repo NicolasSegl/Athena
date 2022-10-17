@@ -163,7 +163,7 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
         int ttMoveIndex = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveIndex;
         if (ttMoveIndex >= 0)
             {
-                //moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+               // moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
             }
     }
     
@@ -224,8 +224,8 @@ int Athena::calculateExtension(Colour side, Byte kingSquare)
 // the zobrist key should be considering who is moving?
 void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey, 
 									  int bestMoveIndex, 
-									  Byte depth, 
-									  short eval, 
+									  int depth, 
+									  int eval, 
 									  int beta, 
 									  int ogAlpha)
 {
@@ -242,24 +242,22 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 			return; // if not too old, then return (i.e. do not replace)
     }
 
-	// now replace the data in the current entry
-
-    // at first, assume that the evaluation recorded in the entry is exact (i.e. derived directly from Athena::evaluatePosition)
-    currentEntry->hashFlag = TranspositionHashEntry::EXACT;
-     
     // if the maximum evaluation for this transposition was NOT better than move found in a sibling node
-    if (eval < ogAlpha)
+    if (eval <= ogAlpha)
 	{
 		 currentEntry->hashFlag = TranspositionHashEntry::UPPER_BOUND;
 		 eval = ogAlpha;
 	}
     // if the maximum evaluation for this transposition was too 
-    if (eval >= beta) 
+    else if (eval >= beta) 
 	{
 		currentEntry->hashFlag = TranspositionHashEntry::LOWER_BOUND;
 		eval = beta;
 	}
+    else
+        currentEntry->hashFlag = TranspositionHashEntry::EXACT;
 
+    currentEntry->eval = eval;
 	currentEntry->depth = depth;
 	currentEntry->zobristKey = zobristKey;
 	currentEntry->bestMoveIndex = bestMoveIndex;
@@ -273,12 +271,12 @@ int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int a
 	TranspositionHashEntry* hashEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
 	if (hashEntry->zobristKey == zobristKey && hashEntry->depth >= depth)
 	{
-		if (hashEntry->hashFlag == TranspositionHashEntry::UPPER_BOUND && hashEntry->eval <= alpha)
+        if (hashEntry->hashFlag == TranspositionHashEntry::EXACT) // exact value
+            return hashEntry->eval;
+		else if (hashEntry->hashFlag == TranspositionHashEntry::UPPER_BOUND && hashEntry->eval <= alpha)
 			return alpha;
 		else if (hashEntry->hashFlag == TranspositionHashEntry::LOWER_BOUND && hashEntry->eval >= beta)
 			return beta;
-		else // exact value
-			return hashEntry->eval;
 	}
 
 	return NO_TT_SCORE;
@@ -357,13 +355,12 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 // alpha is the lower bound for a move's evaluation, beta is the upper bound for a move's evaluation
 int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove, bool isReducedSearch)
 {
-	// since the zobrist key is the same as it was when we exited. wait no, we should have made the move?
-	// is the zobrist key just not getting updated?
-	ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
-	int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
-	if (ttScore != NO_TT_SCORE && !isReducedSearch)
+    // since the zobrist key is the same as it was when we exited. wait no, we should have made the move?
+    // is the zobrist key just not getting updated?
+    ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
+    int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
+    if (ttScore != NO_TT_SCORE)
     {
-        std::cout << "hit with zkey: " << positionZKey << std::endl;
         return ttScore;
     }
 
@@ -380,6 +377,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         float midgameValue = Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB);
         return Eval::evaluateBoardRelativeTo(side, Eval::evaluatePosition(boardPtr, midgameValue));
     }
+    else
+        mNodes++;
 
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
     Byte kingSquare = boardPtr->computeKingSquare(kingBB);
@@ -441,7 +440,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             */
             int eval;
             if (!foundPVMove)
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, false);
+                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, isReducedSearch);
             else
             {
                 /*
@@ -452,7 +451,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
                 */
                 eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, true);
                 if (eval > alpha)
-                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, false);
+                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, isReducedSearch);
             }
 
             boardPtr->unmakeMove(&moves[i]);
@@ -486,7 +485,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             }
         }
     }
-
+    
     if (!isReducedSearch)
 	    insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, beta, ogAlpha);
 

@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 // null moves
 // extensions
 // search windows
-//  one simple extension is to simply increase depth by 1 when under check
+// one simple extension is to simply increase depth by 1 when under check
 // reductions
 // menus
 // choosing what to upgrade a pawn to

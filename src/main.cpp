@@ -12,8 +12,7 @@ int main(int argc, char** argv)
 {
 	std::srand(time(NULL));
 
-	UCI uci;
-	uci.run();
+	UCI::run();
 	return 0;
 }
 

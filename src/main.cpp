@@ -8,7 +8,7 @@
 
 // I LOVE YOU CHARLOTTE <3 I LOVE YOU MORE!!!!
 
-int main(int argc, char** argv)
+int main()
 {
 	std::srand(time(NULL));
 

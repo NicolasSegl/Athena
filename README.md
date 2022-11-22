@@ -16,7 +16,12 @@ Athena is a work-in-progress UCI compatible chess engine.
 * Delta pruning
 * Principal Variation Search
 * History Heuristic
-* Transposition Table
 
-# Misc
-If you want Athena to use her own opening book, make sure that '/books/' is in her current working directory.
+## Running Athena
+To build Athena simply use:
+>mkdir build<br/>
+>cd build<br/>
+>cmake ..<br/>
+>make<br/>
+
+When running the newly made executable, ensure that /books/ is in Athena's current working directory, otherwise she won't be able to use the opening book. 

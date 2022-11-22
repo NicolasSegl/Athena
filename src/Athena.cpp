@@ -158,12 +158,12 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
 {
     // order the move from the transposition table (if it exists) above all other moves
     // also see if the depth is greater than our current ?
-    if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
-    { 
-        int ttMoveIndex = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveIndex;
-        if (ttMoveIndex >= 0 && ttMoveIndex < moves.size())
-            moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
-    }
+    // if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
+    // { 
+    //     int ttMoveIndex = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveIndex;
+    //     if (ttMoveIndex >= 0 && ttMoveIndex < moves.size())
+    //         moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+    // }
     
     for (int i = 0; i < moves.size(); i++)
     {
@@ -353,14 +353,12 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 // alpha is the lower bound for a move's evaluation, beta is the upper bound for a move's evaluation
 int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove, bool isReducedSearch)
 {
-    // since the zobrist key is the same as it was when we exited. wait no, we should have made the move?
-    // is the zobrist key just not getting updated?
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
-    int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
-    if (ttScore != NO_TT_SCORE)
-    {
-        return ttScore;
-    }
+    // int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
+    // if (ttScore != NO_TT_SCORE)
+    // {
+    //     return ttScore;
+    // }
 
     // OR INSUFFICIENT MATERIAL DRAW
     if (Outcomes::isDraw(boardPtr))
@@ -484,8 +482,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         }
     }
     
-    if (!isReducedSearch)
-	    insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, beta, ogAlpha);
+    // if (!isReducedSearch)
+	//     insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, beta, ogAlpha);
 
     // if no moves went through at all (which would result in maxEval == -inf)
     if (maxEval == -INF)

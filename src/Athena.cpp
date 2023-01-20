@@ -91,16 +91,16 @@ std::string Athena::getOpeningBookMove(Board* boardPtr, const std::vector<std::s
         while (std::getline(bookFile, fileLine))
         {
             fileFields.clear();
-            //std::getline(bookFile, fileLine);
-            splitString(fileLine, fileFields, ASCII::TAB_CODE); // 0x9 is the ascii code character for tabs
+            splitString(fileLine, fileFields, ASCII::TAB_CODE);
 
             // get the list of lan string moves for the considered opening
             std::vector<std::string> lanMovesVec;
             splitString(fileFields[3], lanMovesVec, ' ');
 
-            for (int move = 0; move < lanMovesVec.size(); move++)
-            {
-                if (lanMovesVec.size() > longestLine && lanMovesVec.size() > lanStringHistory.size())
+            // if the number of moves in the opening found is greater than our currently considered opening, then we might
+            // have found a possible opening we can use instead
+            if (lanMovesVec.size() > longestLine && lanMovesVec.size() > lanStringHistory.size())
+                for (int move = 0; move < lanMovesVec.size(); move++)
                 {
                     // if the moves made so far in the game match up with this opening line's moves
                     bool isActiveLine = true;
@@ -118,7 +118,6 @@ std::string Athena::getOpeningBookMove(Board* boardPtr, const std::vector<std::s
                         longestLine = lanMovesVec.size();
                     }
                 }
-            }
         }
     }
     

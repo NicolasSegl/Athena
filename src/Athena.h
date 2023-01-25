@@ -9,6 +9,7 @@
 #include "MoveData.h"
 #include "TranspositionHashEntry.h"
 
+// this class defines the engine itself and is how the best move for a given position is found
 class Athena
 {
 private:
@@ -23,6 +24,26 @@ private:
         PIECE_TYPE_NONE,
     };
 
+    // the depth to which we should search the move tree
+    int mDepth;
+
+    // which colour Athena is playing as 
+    Colour mSide;
+    
+    // holds the best move that Athena could find
+    MoveData mMoveToMake;
+
+    // counts the number of nodes that Athena searched
+    int mNodes;
+
+    // limits the total number of half-moves that Athena is able to search down to (for performance reasons)
+    int mMaxPly;
+
+    // we actually have a pointer to a Board object, as otherwise we'd have to constantly be passing said Board object between functions
+    Board* boardPtr;
+
+    // most valuable victim, least valuable attacker table. used for priotizing the
+    // moves that would result in the largest material gain
     Byte MVV_LVATable[7][6] =
     {
         { 99, 99, 99, 99, 99, 99},  // Victim: K, Attacker: P, N, B, R, Q, K
@@ -38,12 +59,17 @@ private:
     int getPieceValue(PieceTypes pieceType);
     int pieceValueTo_MVV_LVA_Index(int value);
     
-    // first element is from square, second element is to square
+    // first element is the origin square, second element is the target square
     int mHistoryHeuristic[64][64];
+
+    // holds the list of 2 killer moves for each ply
     MoveData** mKillerMoves;
+
     void insertKillerMove(MoveData& move, Byte ply);
 
+    // points to a large table of transpositions 
     TranspositionHashEntry* mTranspositionTable;
+
     void clearTranspositionTable();
     void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
 								  int bestMoveIndex, 
@@ -52,14 +78,6 @@ private:
 								  int beta, 
 								  int ogAlpha);
     int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta);
-    
-	int mDepth;
-    Colour mSide;
-    MoveData mMoveToMake;
-
-    int mNodes;
-    int mMaxPly;
-    Board* boardPtr;
     
     int negamax
         (

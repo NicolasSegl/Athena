@@ -1,5 +1,6 @@
 #pragma once
 
+// the full FEN string (containing the castle privileges, side to move, etc) that represents the start of a chess game
 const char FEN_STARTING_STRING[] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 // little endian file mapping to chess coordinate system
@@ -18,9 +19,11 @@ namespace ChessCoord
     };
 }
 
+// this namespace defines some constants for some ASCII codes
 namespace ASCII
 {
-    const int NUMBER_ONE_CODE = 49;
-    const int LETTER_A_CODE   = 97;
-    const int TAB_CODE        = 0x9;
+    const int NUMBER_ONE_CODE  = 49;
+    const int NUMBER_NINE_CODE = 57;
+    const int LETTER_A_CODE    = 97;
+    const int TAB_CODE         = 0x9;
 }

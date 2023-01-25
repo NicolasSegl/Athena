@@ -2,15 +2,20 @@
 
 #include "utils.h"
 
-void splitString(const std::string& string, std::vector<std::string>& vec, char toSplitCharacter)
+// splits a string into chunks based off of a delimiter, and stores them into the vector passed in by reference
+void splitString(const std::string& string, std::vector<std::string>& vec, char delimiter)
 {
 	std::stringstream ss(string);
 	std::string splitString;
-	while (std::getline(ss, splitString, toSplitCharacter))
+	while (std::getline(ss, splitString, delimiter))
 		vec.push_back(splitString);
 }
 
-// calculate the number of set bits by lookup. code mostly provided by geeksforgeeks at https://www.geeksforgeeks.org/count-set-bits-in-an-integer/
+/*
+	the following two functions serve to count the number of set bits in a 64 bit number in an efficient matter
+	details about their implentation can be found at https://www.geeksforgeeks.org/count-set-bits-in-an-integer/
+*/
+
 int bitsSetTable256[256];
 
 void initBitsSetTable()

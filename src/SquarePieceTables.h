@@ -1,9 +1,9 @@
 #pragma once
 
+// defines all of the square piece tables for the various pieces
+// the values are taken from https://www.chessprogramming.org/Simplified_Evaluation_Function
 namespace pst
 {
-	// values taken from https://www.chessprogramming.org/Simplified_Evaluation_Function
-
 	int pawnTable[64] =
 	{
 		 0,  0,  0,   0,  0,  0,  0,  0,
@@ -63,6 +63,10 @@ namespace pst
 		-10,  0,   5,   0,  0,  0,   0,  -10,
 		-20, -10, -10, -5, -5, -10, -10, -20
 	};
+
+	// kings have two square piece tables, one is used when the game is in the midgame and the 
+	// other when the game is in the endgame. this is mostly due to the fact that the king should
+	// be protected early on in the game, but be brought out in the endgame
 
 	int midgameKingTable[64] =
 	{

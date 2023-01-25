@@ -2,15 +2,9 @@
 #include "Bitboard.h"
 #include "MoveData.h"
 
-// the ai may not have to check all forms of a draw
-// we can just say that if no moves pass through at all and the king is not in check, then it's a draw, return 0
-
+// this struct abstracts all of the information about a chess position that is provided by a FEN string
 struct ChessPosition
 {
-	// maybe make a struct in Bitboard.h with all 14 bitboards? then board can have one. would make writing
-	// this sturct a hell of a lot easier. lots of rewriting tho. idk if that's goofy or not ?
-	// in board, could call it mChessPosition ? it would contain the en passant bb, pieces bb, castle privileges, and the side to move? 
-
 	// white piece bitboards
 	Bitboard whitePiecesBB  = 0;
 	Bitboard whitePawnsBB   = 0;
@@ -32,11 +26,15 @@ struct ChessPosition
 	Bitboard occupiedBB  = 0;
 	Bitboard emptyBB	 = 0;
 
+	// bit-encoded Byte, with the first 4 bits corresponding to whether white or black can still complete a long or
+	// short castle. which bits correspond to what can be found in MoveData's CastlePrivileges enum
 	Byte castlePrivileges = 0;
+
 	Byte fiftyMoveCounter = 0;
 	Byte enPassantSquare  = 0;
 
 	Colour sideToMove = SIDE_WHITE;
 
+	// this function resets all of the data in the instance to the default values above
 	void reset() { *this = ChessPosition(); }
 };

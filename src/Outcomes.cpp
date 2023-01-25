@@ -4,7 +4,8 @@
 
 namespace Outcomes
 {
-	// note that current ply will be the move that IS NOT YET RECORDED
+	// checks for threefold repetition by comparing the zobrist key for the current position to all the previous
+	// zobrist keys in the game's history
 	bool isThreefoldRepetition(ZobristKey::zkey* keyHistory, int currentPly)
 	{
 		// we only compare the LAST position with all the other postions in the history up to that point
@@ -13,25 +14,17 @@ namespace Outcomes
 			if (keyHistory[i] == keyHistory[currentPly])
 				repetitionCount++;
 
+		// return true if the position was repeated 3 times
 		if (repetitionCount >= 3)
 			return true;
 		return false;
 	}
 
+	// returns true if there have been fifty full moves with no pawn moves or captures
 	bool isFiftyMoveDraw(int fiftyMoveCounter) { return fiftyMoveCounter >= 100; }
 
-	bool isInsufficientMaterial(ChessPosition position)
-	{
-		// no pawns
-		if (!position.whitePawnsBB && !position.blackPawnsBB)
-		{
-			// lone kings
-			if (position.occupiedBB & ~(position.whiteKingBB | position.blackKingBB) == 0)
-				return true;
-			//else if ()
-		}
-	}
-
+	// returns true if the position is a draw (either by threefold repetition or fifty move draw)
+	// TODO: consider also insignificant material draws
 	bool isDraw(Board* boardPtr)
 	{
 		return isThreefoldRepetition(boardPtr->getZobristKeyHistory(), boardPtr->getCurrentPly()) || isFiftyMoveDraw(boardPtr->getFiftyMoveCounter());

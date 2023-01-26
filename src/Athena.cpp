@@ -67,7 +67,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     mNodes = 0;
 
     // setting this to invalid ensures that if no move was found (due to some sort of bug), there would be no crash, as the move would be considered invalid
-    mMoveToMake.setMoveType(MoveData::EncodingBits::INVALID);
+    mMoveToMake.moveType = MoveType::INVALID;
 
     auto beforeTime = std::chrono::steady_clock::now();
     std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE, false) << std::endl;
@@ -487,8 +487,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         if (boardPtr->makeMove(&moves[i]))
         {
             // if a pawn can be promoted, always assume a queen promotion for simplicity sake
-            if (moves[i].moveType == MoveData::EncodingBits::PAWN_PROMOTION)
-                boardPtr->promotePiece(&moves[i], MoveData::EncodingBits::QUEEN_PROMO);
+            if (moves[i].moveType == MoveType::PAWN_PROMOTION)
+                boardPtr->promotePiece(&moves[i], MoveType::QUEEN_PROMO);
 
             /*
             Principial Variation Search (pvs):
@@ -515,7 +515,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             boardPtr->unmakeMove(&moves[i]);
 
             // this ensures that Athena always make a move (mostly just used as a failsafe)
-            if ((eval > maxEval || mMoveToMake.moveType == MoveData::EncodingBits::INVALID) && ply == 0)
+            if ((eval > maxEval || mMoveToMake.moveType == MoveType::INVALID) && ply == 0)
                 mMoveToMake = moves[i];
 
             

@@ -12,31 +12,31 @@ enum class CastlingPrivilege
     BLACK_SHORT_CASTLE = 1 << 3,
 };
 
+// this enum defines the possible types of moves the move can be
+// it is used for the sake of making/unmaking moves, as some moves can require special handling
+enum class MoveType
+{
+    CAPTURE,
+    LONG_CASTLE,
+    SHORT_CASTLE,
+    INVALID,
+    REGULAR,
+    EN_PASSANT_CAPTURE,
+    QUEEN_PROMO,
+    ROOK_PROMO,
+    BISHOP_PROMO,
+    KNIGHT_PROMO,
+    EN_PASSANT_SQUARE,
+    PAWN_PROMOTION,
+    CASTLE_HALF_MOVE,
+};
+
 // this structure contains all of the information for the engine's abstractions to fully make a move and unmake the same move
 // when the engine generates all of the possible moves, an array of type MoveData is returned
 struct MoveData
 {
-    // this enum defines the possible types of moves the move can be
-    // it is used for the sake of making/unmaking moves, as some moves can require special handling
-    enum class EncodingBits
-    {
-        CAPTURE,
-        LONG_CASTLE,
-        SHORT_CASTLE,
-        INVALID,
-        REGULAR,
-        EN_PASSANT_CAPTURE,
-        QUEEN_PROMO,
-        ROOK_PROMO,
-        BISHOP_PROMO,
-        KNIGHT_PROMO,
-        EN_PASSANT_SQUARE,
-        PAWN_PROMOTION,
-        CASTLE_HALF_MOVE,
-    };
-
     // stores the type of move that the move was (with values according to the enum above)
-    EncodingBits moveType = EncodingBits::INVALID;
+    MoveType moveType = MoveType::INVALID;
 
     /* pieceBB and colourBB must be pointers for the sake of incremental updating */
 
@@ -82,9 +82,6 @@ struct MoveData
 
     // contains the number of full-moves since the last pawn move or piece capture 
     Byte fiftyMoveCounter;
-
-    // a legacy function used early on in development. simply sets the move type of the move
-    void setMoveType(EncodingBits mt) { moveType = mt; }
 
     // compare two moves to see if they are the same 
     bool operator==(MoveData& rightMD)

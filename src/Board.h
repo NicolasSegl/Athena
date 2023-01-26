@@ -51,7 +51,7 @@ public:
 
 	bool makeMove(MoveData* moveData);
 	bool unmakeMove(MoveData* moveData, bool positionUpdated = true);
-	void promotePiece(MoveData* md, MoveData::EncodingBits promoteTo);
+	void promotePiece(MoveData* md, MoveType promoteTo);
 	
 	Byte computeKingSquare(Bitboard kingBB);
 	bool squareAttacked(Byte square, Colour attackingSide);

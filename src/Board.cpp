@@ -178,10 +178,10 @@ bool Board::makeMoveLAN(const std::string& lanString)
 			// if the last character in the lan move string is a character, then it means a pawn has promoted
 			if (lastCharacter > ASCII::LETTER_A_CODE)
 			{
-				if		(lastCharacter == 'q') promotePiece(&moveVec[i], MoveData::EncodingBits::QUEEN_PROMO);
-				else if (lastCharacter == 'r') promotePiece(&moveVec[i], MoveData::EncodingBits::ROOK_PROMO);
-				else if (lastCharacter == 'n') promotePiece(&moveVec[i], MoveData::EncodingBits::KNIGHT_PROMO);
-				else if (lastCharacter == 'b') promotePiece(&moveVec[i], MoveData::EncodingBits::BISHOP_PROMO);
+				if		(lastCharacter == 'q') promotePiece(&moveVec[i], MoveType::QUEEN_PROMO);
+				else if (lastCharacter == 'r') promotePiece(&moveVec[i], MoveType::ROOK_PROMO);
+				else if (lastCharacter == 'n') promotePiece(&moveVec[i], MoveType::KNIGHT_PROMO);
+				else if (lastCharacter == 'b') promotePiece(&moveVec[i], MoveType::BISHOP_PROMO);
 			}
 
 			return true;
@@ -196,10 +196,10 @@ std::string Board::getMoveLANString(MoveData* moveData)
 {
 	std::string lanString = getSquareStringCoordinate(moveData->originSquare) + getSquareStringCoordinate(moveData->targetSquare);
 
-	if		(moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)  lanString += "q";
-	else if (moveData->moveType == MoveData::EncodingBits::ROOK_PROMO)   lanString += "r";
-	else if (moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO) lanString += "n";
-	else if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO) lanString += "b";
+	if		(moveData->moveType == MoveType::QUEEN_PROMO)  lanString += "q";
+	else if (moveData->moveType == MoveType::ROOK_PROMO)   lanString += "r";
+	else if (moveData->moveType == MoveType::KNIGHT_PROMO) lanString += "n";
+	else if (moveData->moveType == MoveType::BISHOP_PROMO) lanString += "b";
 
 	return lanString;
 }
@@ -217,8 +217,8 @@ void Board::setCastleMoveData(MoveData* castleMoveData, MoveData* kingMD, MoveDa
 {
 	kingMD->originSquare = castleMoveData->originSquare;
 	kingMD->targetSquare = castleMoveData->targetSquare;
-	rookMD->setMoveType(MoveData::EncodingBits::CASTLE_HALF_MOVE);
-	kingMD->setMoveType(MoveData::EncodingBits::CASTLE_HALF_MOVE);
+	rookMD->moveType = MoveType::CASTLE_HALF_MOVE;
+	kingMD->moveType = MoveType::CASTLE_HALF_MOVE;
 
     if (castleMoveData->side == SIDE_WHITE)
     {
@@ -247,7 +247,7 @@ bool Board::makeCastleMove(MoveData* md)
 	// sets the origin/target square, colour bitboard, and piece bitboard of the two "half" moves
     setCastleMoveData(md, &kingMove, &rookMove);
 
-    if (md->moveType == MoveData::EncodingBits::SHORT_CASTLE)
+    if (md->moveType == MoveType::SHORT_CASTLE)
     {
         // prevent castling if squares are under attack (preventing a caslte)
         for (int square = 0; square <= 2; square++)
@@ -257,7 +257,7 @@ bool Board::makeCastleMove(MoveData* md)
         rookMove.originSquare = md->originSquare + 3;
         rookMove.targetSquare = md->targetSquare - 1;
     }
-    else if (md->moveType == MoveData::EncodingBits::LONG_CASTLE)
+    else if (md->moveType == MoveType::LONG_CASTLE)
     {
         // prevent castling if squares are under attack (preventing a castle)
         for (int square = 0; square <= 2; square++)
@@ -300,7 +300,7 @@ void Board::updateBitboardWithMove(MoveData* moveData)
 
 	if (moveData->capturedPieceBB) // if a piece was captured
 	{
-		if (moveData->moveType != MoveData::EncodingBits::EN_PASSANT_CAPTURE)
+		if (moveData->moveType != MoveType::EN_PASSANT_CAPTURE)
 		{
 			// unset the bit that was captured
 			*moveData->capturedPieceBB  ^= targetBB;
@@ -520,7 +520,7 @@ void Board::deleteMoveFromHistory(short ply)
 bool Board::makeMove(MoveData* moveData)
 {
 	// check to see if the move was a castling move
-	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
+	if (moveData->moveType == MoveType::SHORT_CASTLE || moveData->moveType == MoveType::LONG_CASTLE)
 	{
 		if (!makeCastleMove(moveData))
 			return false;
@@ -554,7 +554,7 @@ bool Board::makeMove(MoveData* moveData)
 	// to the state of the current position, other than updating the bitboards and the current position's zobrist
 	// key. the other move, however, is not designated as such, and will cause the below if statement to pass,
 	// thereby updating all the rest of the data it needs to
-	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE)
+	if (moveData->moveType != MoveType::CASTLE_HALF_MOVE)
 	{
 		// update the fifty move counter drawing condition
 		moveData->fiftyMoveCounter = currentPosition.fiftyMoveCounter;
@@ -587,7 +587,7 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 	// if the move we're unmaking was a castle move, then we want to undo the castle move by calling the make castle move function
 	// this function checks to see if we're unmaking the castle move or not, and so it handles all the necessary function calls
 	// to properly undo the castle move
-	if (moveData->moveType == MoveData::EncodingBits::SHORT_CASTLE || moveData->moveType == MoveData::EncodingBits::LONG_CASTLE)
+	if (moveData->moveType == MoveType::SHORT_CASTLE || moveData->moveType == MoveType::LONG_CASTLE)
 		makeCastleMove(moveData);
 	else
 	{
@@ -603,7 +603,7 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 	// one of them will be designated as a move that shouldn't cause updates (if it has moveType = CASTLE_HALF_MOVE)
 	// as such, should a castle move have occured, the below if statement will only pass once, even though
 	// resetting the castle move will cause two separate moves
-	if (moveData->moveType != MoveData::EncodingBits::CASTLE_HALF_MOVE && positionUpdated)
+	if (moveData->moveType != MoveType::CASTLE_HALF_MOVE && positionUpdated)
 	{
 		// reset the zobrist key to the previus position's
 		mCurrentZobristKey = mZobristKeyHistory[mPly - 1];
@@ -625,8 +625,8 @@ bool Board::unmakeMove(MoveData* moveData, bool positionUpdated)
 void Board::undoPromotion(MoveData* moveData)
 {
 	// places the pawn back to its previous position
-	if (moveData->moveType == MoveData::EncodingBits::BISHOP_PROMO || moveData->moveType == MoveData::EncodingBits::ROOK_PROMO ||
-		moveData->moveType == MoveData::EncodingBits::KNIGHT_PROMO || moveData->moveType == MoveData::EncodingBits::QUEEN_PROMO)
+	if (moveData->moveType == MoveType::BISHOP_PROMO || moveData->moveType == MoveType::ROOK_PROMO ||
+		moveData->moveType == MoveType::KNIGHT_PROMO || moveData->moveType == MoveType::QUEEN_PROMO)
 	{
 		if (moveData->side == SIDE_WHITE) currentPosition.whitePawnsBB ^= BB::boardSquares[moveData->targetSquare];
 		else							  currentPosition.blackPawnsBB ^= BB::boardSquares[moveData->targetSquare];
@@ -637,25 +637,25 @@ void Board::undoPromotion(MoveData* moveData)
 	// removes the piece that the pawn promoted to
 	switch (moveData->moveType)
 	{
-		case MoveData::EncodingBits::QUEEN_PROMO:
+		case MoveType::QUEEN_PROMO:
 		{
 			if (moveData->side == SIDE_WHITE) currentPosition.whiteQueensBB ^= BB::boardSquares[moveData->targetSquare];
 			else							  currentPosition.blackQueensBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
-		case MoveData::EncodingBits::BISHOP_PROMO:
+		case MoveType::BISHOP_PROMO:
 		{
 			if (moveData->side == SIDE_WHITE) currentPosition.whiteBishopsBB ^= BB::boardSquares[moveData->targetSquare];
 			else							  currentPosition.blackBishopsBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
-		case MoveData::EncodingBits::ROOK_PROMO:
+		case MoveType::ROOK_PROMO:
 		{
 			if (moveData->side == SIDE_WHITE) currentPosition.whiteRooksBB ^= BB::boardSquares[moveData->targetSquare];
 			else							  currentPosition.blackRooksBB ^= BB::boardSquares[moveData->targetSquare];
 			break;
 		}
-		case MoveData::EncodingBits::KNIGHT_PROMO:
+		case MoveType::KNIGHT_PROMO:
 		{
 			if (moveData->side == SIDE_WHITE) currentPosition.whiteKnightsBB ^= BB::boardSquares[moveData->targetSquare];
 			else							  currentPosition.blackKnightsBB ^= BB::boardSquares[moveData->targetSquare];
@@ -667,11 +667,11 @@ void Board::undoPromotion(MoveData* moveData)
 }
 
 // this function deletes a pawn and adds in the piece that the pawn promoted to at the pawn's position
-void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
+void Board::promotePiece(MoveData* md, MoveType promoteTo)
 {
 	// this will set the move's movetype to whatever piece it is promoting to
 	// this is useful for when we want to unpromote a piece during a move search
-	md->setMoveType(promoteTo);
+	md->moveType = promoteTo;
 
 	if (md->side == SIDE_WHITE)
 	{
@@ -679,10 +679,10 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 		currentPosition.whitePawnsBB ^= BB::boardSquares[md->targetSquare];
 
 		// add the piece that the pawn promoted to to the respective bitboard 
-		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.whiteQueensBB  |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.whiteRooksBB   |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.whiteBishopsBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.whiteKnightsBB |= BB::boardSquares[md->targetSquare];
+		if		(promoteTo == MoveType::QUEEN_PROMO)	currentPosition.whiteQueensBB  |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveType::ROOK_PROMO)	currentPosition.whiteRooksBB   |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveType::BISHOP_PROMO) currentPosition.whiteBishopsBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveType::KNIGHT_PROMO) currentPosition.whiteKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
 	else
 	{
@@ -690,9 +690,9 @@ void Board::promotePiece(MoveData* md, MoveData::EncodingBits promoteTo)
 		currentPosition.blackPawnsBB ^= BB::boardSquares[md->targetSquare];
 
 		// add the piece that the pawn promoted to to the respective bitboard 
-		if		(promoteTo == MoveData::EncodingBits::QUEEN_PROMO)	currentPosition.blackQueensBB  |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::ROOK_PROMO)	currentPosition.blackRooksBB   |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::BISHOP_PROMO) currentPosition.blackBishopsBB |= BB::boardSquares[md->targetSquare];
-		else if (promoteTo == MoveData::EncodingBits::KNIGHT_PROMO) currentPosition.blackKnightsBB |= BB::boardSquares[md->targetSquare];
+		if		(promoteTo == MoveType::QUEEN_PROMO)	currentPosition.blackQueensBB  |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveType::ROOK_PROMO)	currentPosition.blackRooksBB   |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveType::BISHOP_PROMO) currentPosition.blackBishopsBB |= BB::boardSquares[md->targetSquare];
+		else if (promoteTo == MoveType::KNIGHT_PROMO) currentPosition.blackKnightsBB |= BB::boardSquares[md->targetSquare];
 	}
 }

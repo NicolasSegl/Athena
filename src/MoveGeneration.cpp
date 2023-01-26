@@ -318,7 +318,7 @@ namespace MoveGeneration
 
         // note that setting the move type to regular here is necessary, as we can use the move type of the move 
         // as a flag to see if the castle is legal
-        md.setMoveType(MoveData::EncodingBits::REGULAR);
+        md.moveType = MoveType::REGULAR;
 
         // these variables store the starting and ending square that the king must be able to move between to make a castle
         int lower, higher;
@@ -342,14 +342,14 @@ namespace MoveGeneration
                     for (int tile = lower; tile < higher; tile++)
                         if (BB::boardSquares[tile] & occupiedBB)
                         {
-                            md.setMoveType(MoveData::EncodingBits::INVALID);
+                            md.moveType = MoveType::INVALID;
                             break;
                         }
 
                     // checks to see if the castle move is possible (it will be as long as the move's type hasn't been set to invalid)
-                    if (md.moveType != MoveData::EncodingBits::INVALID)
+                    if (md.moveType != MoveType::INVALID)
                     {
-                        md.setMoveType(MoveData::EncodingBits::SHORT_CASTLE);
+                        md.moveType = MoveType::SHORT_CASTLE;
                         setCastleMovePrivilegesRevoked(md.side, privileges, &md.castlePrivilegesRevoked);
 
                         // sets the origin and square for the move for the king
@@ -377,14 +377,14 @@ namespace MoveGeneration
                     for (int tile = higher; tile > lower; tile--)
                         if (BB::boardSquares[tile] & occupiedBB)
                         {
-                            md.setMoveType(MoveData::EncodingBits::INVALID);
+                            md.moveType = MoveType::INVALID;
                             break;
                         }
 
                     // checks to see if the castle move is possible (it will be as long as the move's type hasn't been set to invalid)
-                    if (md.moveType != MoveData::EncodingBits::INVALID)
+                    if (md.moveType != MoveType::INVALID)
                     {
-                        md.setMoveType(MoveData::EncodingBits::LONG_CASTLE);
+                        md.moveType = MoveType::LONG_CASTLE;
                         setCastleMovePrivilegesRevoked(md.side, privileges, &md.castlePrivilegesRevoked);
 
                         // sets the origin and square for the move for the king
@@ -400,8 +400,8 @@ namespace MoveGeneration
         // if the move type is regular, which would indicate that the castle move was unsuccessful 
         // (likely due to no privileges), then we need to set the move to invalid so it isn't added
         // to the move vector
-        if (md.moveType == MoveData::EncodingBits::REGULAR)
-            md.setMoveType(MoveData::EncodingBits::INVALID);
+        if (md.moveType == MoveType::REGULAR)
+            md.moveType = MoveType::INVALID;
 
         return md;
     }
@@ -564,9 +564,9 @@ namespace MoveGeneration
         }
 
         // these if statements will add the castle moves to the move vector if they were psuedo legal
-        if (shortCastleMD.moveType != MoveData::EncodingBits::INVALID)
+        if (shortCastleMD.moveType != MoveType::INVALID)
             movesVec.push_back(shortCastleMD);
-        if (longCastleMD.moveType != MoveData::EncodingBits::INVALID)
+        if (longCastleMD.moveType != MoveType::INVALID)
             movesVec.push_back(longCastleMD);
     }
 
@@ -630,12 +630,12 @@ namespace MoveGeneration
                     if (md->pieceBB == &board->currentPosition.whitePawnsBB)
                     {
                         md->capturedPieceBB = getPieceBitboard(board, square - 8, SIDE_BLACK);
-                        md->setMoveType(MoveData::EncodingBits::EN_PASSANT_CAPTURE);
+                        md->moveType = MoveType::EN_PASSANT_CAPTURE;
                     }
                     else if (md->pieceBB == &board->currentPosition.blackPawnsBB)
                     {
                         md->capturedPieceBB = getPieceBitboard(board, square + 8, SIDE_WHITE);
-                        md->setMoveType(MoveData::EncodingBits::EN_PASSANT_CAPTURE);
+                        md->moveType = MoveType::EN_PASSANT_CAPTURE;
                     }
                 }
             }
@@ -660,7 +660,7 @@ namespace MoveGeneration
                 // set the default values for the move data
                 md.targetSquare = square;
                 md.capturedPieceBB = nullptr;
-                md.setMoveType(MoveData::EncodingBits::REGULAR);
+                md.moveType = MoveType::REGULAR;
 
                 // if there is an enemy piece on the square that the piece is moving to, get the data bout the piece that would be captured
                 if (BB::boardSquares[square] & *md.capturedColourBB)
@@ -671,8 +671,8 @@ namespace MoveGeneration
                     continue;
 
                 // these if statements check to see if a pawn would be promoted by this move
-                if (md.pieceBB == &board->currentPosition.whitePawnsBB && md.targetSquare >= ChessCoord::A8)  md.setMoveType(MoveData::EncodingBits::PAWN_PROMOTION);
-                if (md.pieceBB == &board->currentPosition.blackPawnsBB && md.targetSquare <= ChessCoord::H1)  md.setMoveType(MoveData::EncodingBits::PAWN_PROMOTION);
+                if (md.pieceBB == &board->currentPosition.whitePawnsBB && md.targetSquare >= ChessCoord::A8) md.moveType = MoveType::PAWN_PROMOTION;
+                if (md.pieceBB == &board->currentPosition.blackPawnsBB && md.targetSquare <= ChessCoord::H1) md.moveType = MoveType::PAWN_PROMOTION;
 
                 setEnPassantMoveData(board, square, movesBB, &md);
 

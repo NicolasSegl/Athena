@@ -397,6 +397,12 @@ namespace MoveGeneration
             }
         }
 
+        // if the move type is regular, which would indicate that the castle move was unsuccessful 
+        // (likely due to no privileges), then we need to set the move to invalid so it isn't added
+        // to the move vector
+        if (md.moveType == MoveData::EncodingBits::REGULAR)
+            md.setMoveType(MoveData::EncodingBits::INVALID);
+
         return md;
     }
 

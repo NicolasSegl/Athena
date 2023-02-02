@@ -23,6 +23,10 @@ std::string ChessGame::findBestMove(Colour side, float timeToMove)
         // if the string size is greater than 0, it means that an opening move was found
         if (openingMove.size() > 0)
             return openingMove;
+        else
+            // if the current move history has not one associated opening possible, then it never again will,
+            // so we should let Athena know not to check the opening book henceforth
+            mCheckOpeningBook = false;
     }
 
     // if no opening move could be used, then use Athena to find the best move via minimax searching

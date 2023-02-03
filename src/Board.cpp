@@ -536,6 +536,8 @@ bool Board::makeMove(MoveData* moveData)
 			// passing in false so that we do not update the zobrist key/history, as we never actually added it here
 			// this means that otherwise it would be removing the previous zobrist key, eventually giving negative 
 			// ply numbers and undefined behaviour
+
+			moveData->fiftyMoveCounter = currentPosition.fiftyMoveCounter;
 			unmakeMove(moveData, false);
 			return false;
 		}

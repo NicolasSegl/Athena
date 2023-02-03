@@ -33,13 +33,6 @@ namespace UCI
 	// response to the "isready" command
 	void respondIsReady()
 	{
-		// the following calls to various init functions initializes the engine
-		MoveGeneration::init();
-		initBitsSetTable();
-		Eval::init();
-		ZobristKey::init();
-		chessGame.init();
-
 		// response indicating that the engine is ready for the next command
 		std::cout << "readyok\n";
 	}
@@ -133,6 +126,13 @@ namespace UCI
 	// waits on GUI input to the engine using the UCI interface, and provokes a response if and when necessary
 	void run()
 	{
+		// the following calls to various init functions initializes the engine
+		MoveGeneration::init();
+		initBitsSetTable();
+		Eval::init();
+		ZobristKey::init();
+		chessGame.init();
+
 		while (true)
 		{
 			std::string uciInput;

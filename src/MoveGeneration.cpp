@@ -151,11 +151,13 @@ namespace MoveGeneration
     }
 
     // computes the pawn's pseudo moves based on the positions of other pieces
-    Bitboard computePseudoPawnMoves(Byte fromSquare, Colour side, Bitboard enemyPiecesBB, Bitboard emptyBB, Bitboard enPassantBB)
+    Bitboard computePseudoPawnMoves(Byte fromSquare, Colour side, Bitboard enemyPiecesBB, Bitboard emptyBB, Byte enPassantSquare)
     {
         // initialize the moves bitboard with the possible diagonal moves that the pawn can make
         // it's important to note that pawn's can only attack diagonally when an enemy occupies the square
-        Bitboard movesBB = (pawnAttackLookupTable[side][fromSquare] & enemyPiecesBB) | (pawnAttackLookupTable[side][fromSquare] & enPassantBB);
+        Bitboard movesBB = (pawnAttackLookupTable[side][fromSquare] & enemyPiecesBB);
+        if (enPassantSquare != NO_SQUARE)
+            movesBB |= pawnAttackLookupTable[side][fromSquare] & BB::boardSquares[enPassantSquare];
 
         // here we're adding the square in front of the pawn to its possibles moves, should it not be blocked by any other pieces
         // additionally, we add the square two in front of the pawn if it isn't blocked and the pawn was on its home rank
@@ -727,7 +729,7 @@ namespace MoveGeneration
             return computePseudoKnightMoves(md->originSquare, *md->colourBB);
 
         else if ((pieceBB & board->currentPosition.whitePawnsBB) || (pieceBB & board->currentPosition.blackPawnsBB))
-            return computePseudoPawnMoves(md->originSquare, md->side, *md->capturedColourBB, board->currentPosition.emptyBB, BB::boardSquares[board->currentPosition.enPassantSquare]);
+            return computePseudoPawnMoves(md->originSquare, md->side, *md->capturedColourBB, board->currentPosition.emptyBB, board->currentPosition.enPassantSquare);
 
         else if ((pieceBB & board->currentPosition.whiteBishopsBB) || (pieceBB & board->currentPosition.blackBishopsBB))
             return computePseudoBishopMoves(md->originSquare, board->currentPosition.occupiedBB, *md->colourBB);

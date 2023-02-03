@@ -33,7 +33,7 @@ namespace MoveGeneration
 
     Bitboard computePseudoKingMoves(Byte fromSquare, Bitboard friendlyPiecesBB);
     Bitboard computePseudoKnightMoves(Byte fromSquare, Bitboard friendlyPiecesBB);
-    Bitboard computePseudoPawnMoves(Byte fromSquare, Colour side, Bitboard enemyPiecesBB, Bitboard occupiedSquaresBB, Bitboard enPassantBB);
+    Bitboard computePseudoPawnMoves(Byte fromSquare, Colour side, Bitboard enemyPiecesBB, Bitboard occupiedSquaresBB, Byte enPassantSquare);
     Bitboard computePseudoRookMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB);
     Bitboard computePseudoBishopMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB);
     Bitboard computePseudoQueenMoves(Byte fromSquare, Bitboard occupiedBB, Bitboard friendlyPiecesBB);

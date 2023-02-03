@@ -19,7 +19,7 @@ const int TT_MOVE_SCORE     = 10000;
 const int KILLER_MOVE_SCORE = 10;
 const int MAX_KILLER_MOVES  = 2;
 
-const int TRANSPOSITION_TABLE_SIZE = 1000000;
+const int TRANSPOSITION_TABLE_SIZE = 0x1000000;
 
 const bool CAN_NULL_MOVE    = true;
 const bool CANNOT_NULL_MOVE = false;
@@ -254,6 +254,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 									  int bestMoveIndex, 
 									  int depth, 
 									  int eval, 
+                                      int alpha,
 									  int beta, 
 									  int ogAlpha)
 {
@@ -271,18 +272,15 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 			return; // if not too old, then return (i.e. do not replace)
     }
 
-    // if the evaluation for this transposition was NOT better than move found in a sibling node
+    // if the moves that the evaluation tried to search from its position all failed high
     if (eval <= ogAlpha)
 	{
 		 currentEntry->hashFlag = TranspositionHashEntry::UPPER_BOUND;
-		 eval = ogAlpha;
+		 eval = alpha;
 	}
     // if the evaluation for this transposition was better than the moves already searched in sibling nodes 
     else if (eval >= beta) 
-	{
 		currentEntry->hashFlag = TranspositionHashEntry::LOWER_BOUND;
-		eval = beta;
-	}
     // if the evaluation for this transposition was better than the moves found in sibling nodes, but still reached the end of the search tree
     else
         currentEntry->hashFlag = TranspositionHashEntry::EXACT;
@@ -402,14 +400,16 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     it is the primary function of the engine, as it searches through all the moves and evaluates their worth
     alpha is the lower bound for a move's evaluation, beta is the upper bound for a move's evaluation
 */
+int collisions = 0;
 int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove, bool isReducedSearch)
 {
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
-    // int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
-    // if (ttScore != NO_TT_SCORE)
-    // {
-    //     return ttScore;
-    // }
+    int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
+    if (ttScore != NO_TT_SCORE)
+    {
+        std::cout << "collisions: " << collisions++ << std::endl;
+        return ttScore;
+    }
 
     // return an evaluation of 0 if a draw occured
     if (Outcomes::isDraw(boardPtr))
@@ -423,7 +423,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             if (lastMove->capturedPieceBB) // this indicates a violent move. it means that we should search until we encounter only quiet (non-capture) moves
                 return quietMoveSearch(side, alpha, beta, ply);
 
-        // if the last move was not a capturing move, then we simply need to return the evaluation of the current position, relative to the side that is playing
+        // if the last move was not a capturing move, then we simply need to return the 
+        // evaluation of the current position, relative to the side that is playing
         float midgameValue = Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB);
         return Eval::evaluateBoardRelativeTo(side, Eval::evaluatePosition(boardPtr, midgameValue));
     }
@@ -433,10 +434,6 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
     Byte kingSquare = boardPtr->computeKingSquare(kingBB);
     bool inCheck = boardPtr->squareAttacked(kingSquare, !side);
-
-    // futility pruning
-    //if (depth == 1)
-      //  if (canNullMove && !inCheck && )
         
     // if for whatever reason the side to play has no king, return a huge negative value
     if (!kingBB)
@@ -482,7 +479,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     for (int i = 0; i < moves.size(); i++)
     {
         selectMove(moves, i); // swaps current move with the most likely good move in the move list
-        
+
         // if the move is legal (i.e. wouldn't result in a check)
         if (boardPtr->makeMove(&moves[i]))
         {
@@ -552,8 +549,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         }
     }
     
-    // if (!isReducedSearch)
-	//     insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, beta, ogAlpha);
+    if (!isReducedSearch)
+	     insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, alpha, beta, ogAlpha);
 
     // checks to see if no moves went through at all (which means that there were no legal moves)
     if (maxEval == -INF)

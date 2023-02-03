@@ -2,6 +2,8 @@
 #include "Bitboard.h"
 #include "MoveData.h"
 
+const Byte NO_SQUARE = 100;
+
 // this struct abstracts all of the information about a chess position that is provided by a FEN string
 struct ChessPosition
 {
@@ -31,7 +33,9 @@ struct ChessPosition
 	Byte castlePrivileges = 0;
 
 	Byte fiftyMoveCounter = 0;
-	Byte enPassantSquare  = 0;
+
+	// an en passant square value of 100 indicates that no square is set
+	Byte enPassantSquare  = NO_SQUARE;
 
 	Colour sideToMove = SIDE_WHITE;
 

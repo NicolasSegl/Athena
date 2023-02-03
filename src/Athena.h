@@ -75,6 +75,7 @@ private:
 								  int bestMoveIndex, 
 								  int depth, 
                                   int eval,
+                                  int alpha,
 								  int beta, 
 								  int ogAlpha);
     int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta);

@@ -485,7 +485,7 @@ void Board::getLeastValuableAttacker(Byte square, Colour attackingSide, int* pie
 void Board::setEnPassantSquares(MoveData* moveData)
 {
 	// default to no en passant squares being set
-	currentPosition.enPassantSquare = 0;
+	currentPosition.enPassantSquare = NO_SQUARE;
 
 	// the below if statements check to see if the move would have set an en passant square by checking if the piece
 	// moved was a pawn, and if so, if it moved 2 spaces (8 tiles * 2 = 16). if it passes, it will set the coordinate
@@ -566,7 +566,10 @@ bool Board::makeMove(MoveData* moveData)
 			currentPosition.fiftyMoveCounter++;
 
 		currentPosition.sideToMove = !currentPosition.sideToMove;
-		mCurrentZobristKey = ZobristKey::update(mCurrentZobristKey, &currentPosition, moveData);
+
+		if (moveData->moveType != MoveType::SHORT_CASTLE && moveData->moveType != MoveType::LONG_CASTLE)
+			mCurrentZobristKey = ZobristKey::update(mCurrentZobristKey, &currentPosition, moveData);
+
 		insertMoveIntoHistory(++mPly);
 	}
 	else

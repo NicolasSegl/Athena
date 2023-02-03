@@ -151,11 +151,8 @@ namespace ZobristKey
 	zkey update(zkey zobristKey, ChessPosition* chessPosition, MoveData* moveData)
 	{
 		// XOR the hash keys for the piece that made the move (based on where it went, and where it came from)
-		if (moveData->pieceBB)
-		{
-			zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare);
-			zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->targetSquare);
-		}
+		zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare);
+		zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->targetSquare);
 
 		// XOR the hash key for the piece that was captured (based on where the piece once was), if one was captured at all
 		if (moveData->capturedPieceBB)
@@ -165,7 +162,8 @@ namespace ZobristKey
 		zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
 
 		// XOR the hash key for the current position's en passant square
-		zobristKey ^= enpassantHashKeys[chessPosition->enPassantSquare];
+		if (chessPosition->enPassantSquare != NO_SQUARE)
+			zobristKey ^= enpassantHashKeys[chessPosition->enPassantSquare];
 
 		// XOR the hash key for the side to move (if the side to move is white)
 		if (!chessPosition->sideToMove)

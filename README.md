@@ -1,7 +1,5 @@
 # Athena
-
-## About
-Athena is a work-in-progress UCI compatible chess engine.
+Athena is a UCI compatible chess engine.
 
 ## Features
 * UCI compatability
@@ -18,9 +16,9 @@ Athena is a work-in-progress UCI compatible chess engine.
 * History Heuristic
 
 ## Running Athena
-To build Athena simply use:
+Building:
 >mkdir build<br/>
->cd build<br/>
+>cd build<br/>S
 >cmake ..<br/>
 >make<br/>
 

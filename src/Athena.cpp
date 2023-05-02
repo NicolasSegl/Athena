@@ -33,9 +33,6 @@ Athena::Athena()
     mDepth = 8;
     mMaxPly = 20;
 
-    mTranspositionTable = new TranspositionHashEntry[TRANSPOSITION_TABLE_SIZE];
-    clearTranspositionTable();
-
     // allocates enough memory for two killer moves per ply
     mKillerMoves = new MoveData*[mMaxPly];
     for (int i = 0; i < mMaxPly; i++)
@@ -50,13 +47,6 @@ Athena::Athena()
     for (int i = 0; i < 64; i++)
         for (int j = 0; j < 64; j++)
             mHistoryHeuristic[i][j] = 0;
-}
-
-// sets all the values in the transposition table to null (so we know that no data has yet been found at a given index)
-void Athena::clearTranspositionTable()
-{
-    for (int i = 0; i < TRANSPOSITION_TABLE_SIZE; i++)
-        mTranspositionTable[i].hashFlag = TranspositionHashEntry::NONEXISTENT;
 }
 
 // calls negamax and returns the best move that it has found
@@ -176,15 +166,6 @@ int Athena::pieceValueTo_MVV_LVA_Index(int value)
 // move, as as higher value indicates that the move might be better than another move with a lower value
 void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey)
 {
-    // order the move from the transposition table (if it exists) above all other moves
-    // also see if the depth is greater than our current ?
-    // if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
-    // { 
-    //     int ttMoveIndex = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveIndex;
-    //     if (ttMoveIndex >= 0 && ttMoveIndex < moves.size())
-    //         moves[ttMoveIndex].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
-    // }
-    
     for (int i = 0; i < moves.size(); i++)
     {
         // if the move is violent (i.e. involves a piece being captured), then assign a move score based on
@@ -245,69 +226,6 @@ int Athena::calculateExtension(Colour side, Byte kingSquare)
         return 1;
 
     return 0;
-}
-
-// decides whether or not a move will be inserted into the transposition table
-// in essence, it checks whether or not the move that was just considered by Athena was more or less accurate than the current
-// entry in the index given by the zobrist key. if it is less accurate, no replacement occurs.
-void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey, 
-									  int bestMoveIndex, 
-									  int depth, 
-									  int eval, 
-                                      int alpha,
-									  int beta, 
-									  int ogAlpha)
-{
-    // fetch the entry currently in the table by the given zobrist key
-    TranspositionHashEntry* currentEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
-
-    /*
-        if there exists a position at this index already, we need to see if we should replace it
-        if our current entry has searched further, then we will replace the current table entry
-    */
-    if (currentEntry->zobristKey)
-    {
-		// the higher the depth, the further the node has been searched
-        if (currentEntry->depth >= depth)
-			return; // if not too old, then return (i.e. do not replace)
-    }
-
-    // if the moves that the evaluation tried to search from its position all failed high
-    if (eval <= ogAlpha)
-	{
-		 currentEntry->hashFlag = TranspositionHashEntry::UPPER_BOUND;
-		 eval = alpha;
-	}
-    // if the evaluation for this transposition was better than the moves already searched in sibling nodes 
-    else if (eval >= beta) 
-		currentEntry->hashFlag = TranspositionHashEntry::LOWER_BOUND;
-    // if the evaluation for this transposition was better than the moves found in sibling nodes, but still reached the end of the search tree
-    else
-        currentEntry->hashFlag = TranspositionHashEntry::EXACT;
-
-    // set the other data for the entry based on the move just evaluated
-    currentEntry->eval = eval;
-	currentEntry->depth = depth;
-	currentEntry->zobristKey = zobristKey;
-	currentEntry->bestMoveIndex = bestMoveIndex;
-}
-
-// reads the data from the transposition table given the zobrist key's hash value
-// if no such entry exists yet, then a value is returned indicating that no entry could be found
-int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta)
-{
-	TranspositionHashEntry* hashEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
-	if (hashEntry->zobristKey == zobristKey && hashEntry->depth >= depth)
-	{
-        if (hashEntry->hashFlag == TranspositionHashEntry::EXACT)
-            return hashEntry->eval;
-		else if (hashEntry->hashFlag == TranspositionHashEntry::UPPER_BOUND && hashEntry->eval <= alpha)
-			return alpha;
-		else if (hashEntry->hashFlag == TranspositionHashEntry::LOWER_BOUND && hashEntry->eval >= beta)
-			return beta;
-	}
-
-	return NO_TT_SCORE;
 }
 
 // returns the centipawn value of a given piece
@@ -400,16 +318,9 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     it is the primary function of the engine, as it searches through all the moves and evaluates their worth
     alpha is the lower bound for a move's evaluation, beta is the upper bound for a move's evaluation
 */
-int collisions = 0;
 int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove, bool isReducedSearch)
 {
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
-    int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
-    if (ttScore != NO_TT_SCORE)
-    {
-        std::cout << "collisions: " << collisions++ << std::endl;
-        return ttScore;
-    }
 
     // return an evaluation of 0 if a draw occured
     if (Outcomes::isDraw(boardPtr))
@@ -463,8 +374,6 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     // used for determining the transposition table entry's flag for this call to negamax
     int ogAlpha = alpha; 
 	
-	int bestMoveIndex = -1;
-
     // populate a vector with the moves for the side to play
     std::vector<MoveData> moves;
     MoveGeneration::calculateSideMoves(boardPtr, side, moves, false);
@@ -519,10 +428,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             // should the move just tested be the best move so far, set the maxmimum evaluation to its evaluation and set the best move index
             // to the current index (so that the transposition table can be used for sorting move priorities)
 			if (eval > maxEval)
-			{
 				maxEval = eval;
-				bestMoveIndex = i;
-			}
 
             // checks to see if this move is better than the previosuly thought best move for this turn
             if (eval > alpha)
@@ -548,9 +454,6 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             }
         }
     }
-    
-    if (!isReducedSearch)
-	     insertTranspositionEntry(positionZKey, bestMoveIndex, depth, maxEval, alpha, beta, ogAlpha);
 
     // checks to see if no moves went through at all (which means that there were no legal moves)
     if (maxEval == -INF)

@@ -127,7 +127,7 @@ namespace Eval
         int shieldValue = 0;
 
         // if the king has long castled (or is otherwise on the west side of the board)
-        if (kingSquare < ChessCoord::E1)
+        if (kingSquare <= ChessCoord::C1)
         {
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
@@ -137,7 +137,7 @@ namespace Eval
         }
 
         // if the king has short castled (or is otherwise on the east side of the board)
-        else if (kingSquare > ChessCoord::E1)
+        else if (kingSquare >= ChessCoord::G1)
         {
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H2]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H3]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
@@ -155,7 +155,7 @@ namespace Eval
         int shieldValue = 0;
 
         // if the king has long castled (or is otherwise on the west side of the board)
-        if (kingSquare < ChessCoord::E8)
+        if (kingSquare <= ChessCoord::C8)
         {
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::A6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
@@ -165,7 +165,7 @@ namespace Eval
         }
 
         // if the king has short castled (or is otherwise on the east side of the board)
-        else if (kingSquare > ChessCoord::E8)
+        else if (kingSquare >= ChessCoord::G8)
         {
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H7]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
             if (friendlyPawnsBB & BB::boardSquares[ChessCoord::H6]) shieldValue += KING_MIDGAME_PAWN_SHIELD_BONUS;
@@ -198,7 +198,7 @@ namespace Eval
         // consider as well the strength of the pawn shield around the king
         structureValue += side == SIDE_WHITE ? whiteKingShieldValue(square, friendlyPawnsBB) : blackKingShieldValue(square, friendlyPawnsBB);
 
-       return structureValue;
+        return structureValue;
     }
 
     // evaluate the structual position of the king, using different weightings for various bonuses/penalties based on how far in the game is

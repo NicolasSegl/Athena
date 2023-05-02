@@ -15,8 +15,12 @@ Athena is a UCI compatible chess engine.
 * Principal Variation Search
 * History Heuristic
 
+<<<<<<< HEAD
 ## Running Athena
 Building:
+=======
+## Building Athena
+>>>>>>> d19ab16d756cfa0b98a6ef64123f7a776c24f71a
 >mkdir build<br/>
 >cd build<br/>S
 >cmake ..<br/>

@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -25,6 +24,9 @@ const bool CAN_NULL_MOVE    = true;
 const bool CANNOT_NULL_MOVE = false;
 
 const int NO_TT_SCORE = -9999999;
+
+// this number defines the number of nodes that will be searched between each check of time
+const int TIME_CHECK_INTERVAL = 100;
 
 // initializes Athena's tranpsosition table and sets the default depth
 Athena::Athena()
@@ -53,18 +55,20 @@ Athena::Athena()
 MoveData Athena::search(Board* ptr, float timeToMove)
 {
     // initialize values for the upcoming search
-    boardPtr = ptr;
-    mNodes = 0;
+    boardPtr    = ptr;
+    mNodes      = 0;
+    mTimeLeft   = timeToMove;
+    mHaltSearch = false;
 
     // setting this to invalid ensures that if no move was found (due to some sort of bug), there would be no crash, as the move would be considered invalid
     mMoveToMake.moveType = MoveType::INVALID;
 
-    auto beforeTime = std::chrono::steady_clock::now();
+    mStartTime = std::chrono::steady_clock::now();
     std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE, false) << std::endl;
     auto afterTime = std::chrono::steady_clock::now();
     
     // output some rudimentary data about the search
-    std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - beforeTime).count() << std::endl;
+    std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - mStartTime).count() << std::endl;
     std::cout << "num of nodes: " << mNodes << std::endl;
 
     return mMoveToMake;
@@ -313,6 +317,24 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
     return alpha;
 }
 
+// halts the move search if Athena has been using too much time (as to prevent timeout)
+void Athena::checkTimeLeft()
+{
+    static int nodeCounter = 0;
+    nodeCounter++;
+
+    // check to see if Athena has taken too much time every so many nodes (as defined by TIME_CHECK_INTERVAL)
+    if (nodeCounter >= TIME_CHECK_INTERVAL)
+    {
+        // reset the node counter
+        nodeCounter = 0;
+        
+        // if the current move has taken up 5% or more of the remainder of Athena's time, then we will simply use whichever move we have found and halt the search
+        if (std::chrono::duration<double>(std::chrono::steady_clock::now() - mStartTime).count() * 1000 >= 0.05 * mTimeLeft)
+            mHaltSearch = true;
+    }
+}
+
 /*
     this is an implentation of the minimax algorithm. negamax is simply an easy method to reduce the sheer number of lines of repeated code necessary
     it is the primary function of the engine, as it searches through all the moves and evaluates their worth
@@ -320,6 +342,10 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 */
 int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveData* lastMove, bool canNullMove, bool isReducedSearch)
 {
+    // immediately return if the search has been halted
+    if (mHaltSearch)
+        return 0;
+
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
 
     // return an evaluation of 0 if a draw occured
@@ -340,7 +366,10 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         return Eval::evaluateBoardRelativeTo(side, Eval::evaluatePosition(boardPtr, midgameValue));
     }
     else
+    {
+        checkTimeLeft();
         mNodes++;
+    }
 
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
     Byte kingSquare = boardPtr->computeKingSquare(kingBB);
@@ -424,7 +453,10 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             if ((eval > maxEval || mMoveToMake.moveType == MoveType::INVALID) && ply == 0)
                 mMoveToMake = moves[i];
 
-            
+            // immediately break out of the move loop if the search has been halted
+            if (mHaltSearch)
+                break;
+
             // should the move just tested be the best move so far, set the maxmimum evaluation to its evaluation and set the best move index
             // to the current index (so that the transposition table can be used for sorting move priorities)
 			if (eval > maxEval)

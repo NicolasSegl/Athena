@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -37,6 +38,15 @@ private:
 
     // limits the total number of half-moves that Athena is able to search down to (for performance reasons)
     int mMaxPly;
+
+    // holds the time that athena has left as a in milliseconds
+    float mTimeLeft;
+
+    // stores the system time at the very start of the move search
+    std::chrono::time_point<std::chrono::steady_clock> mStartTime;
+
+    // reads true if the search is to be halted, reads false otherwise
+    bool mHaltSearch;
 
     // we actually have a pointer to a Board object, as otherwise we'd have to constantly be passing said Board object between functions
     Board* boardPtr;
@@ -82,6 +92,8 @@ private:
     void assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey);
     void selectMove(std::vector<MoveData>& moves, Byte startIndex);
     int calculateExtension(Colour side, Byte kingSquare);
+
+    void checkTimeLeft();
     
 public:
     Athena();

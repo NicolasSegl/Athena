@@ -78,7 +78,7 @@ namespace UCI
 	// response to the "go" command
 	void respondGo(const std::vector<std::string>& commandVec)
 	{
-		// the time athena has to search for a move. set to 99999 in case the uci gui doesn't specify the time (or time is unlimited)
+		// the time athena has to search for a move. set an effectively infinite amount of time in case the uci gui doesn't specify the time (or time truly is unlimited)
 		float athenaTime = 99999; // in miliseconds
 
 		// iterate over the options given in the "go" call to get the amount of time that Athena has left on its timer

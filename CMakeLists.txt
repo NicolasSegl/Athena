@@ -22,7 +22,6 @@ add_executable(Athena
                 src/Outcomes.cpp
                 src/Outcomes.h
                 src/SquarePieceTables.h
-                src/TranspositionHashEntry.h
                 src/utils.h
                 src/utils.cpp
                 src/UCI.h

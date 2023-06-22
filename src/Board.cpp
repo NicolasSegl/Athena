@@ -570,12 +570,10 @@ bool Board::makeMove(MoveData* moveData)
 		currentPosition.sideToMove = !currentPosition.sideToMove;
 
 		if (moveData->moveType != MoveType::SHORT_CASTLE && moveData->moveType != MoveType::LONG_CASTLE)
-			mCurrentZobristKey = ZobristKey::update(mCurrentZobristKey, &currentPosition, moveData);
-
+			mCurrentZobristKey = ZobristKey::generate(&currentPosition);
+			
 		insertMoveIntoHistory(++mPly);
 	}
-	else
-		mCurrentZobristKey = ZobristKey::update(mCurrentZobristKey, &currentPosition, moveData);
 
 	return true;
 }

@@ -90,35 +90,6 @@ namespace ZobristKey
 		return hashkey;
 	}
 
-	// returns the hash key from the pieces hash table based on the given piece bitboard and the square that the piece is on
-	// this override of the function is used for zobrist key updating
-	uint64_t getPieceHashKey(ChessPosition* chessPosition, Bitboard* pieceBB, Byte square)
-	{
-		uint64_t hashkey = 0;
-
-		if (*pieceBB & chessPosition->whitePiecesBB)
-		{
-			if	    (*pieceBB & chessPosition->whitePawnsBB)   hashkey |=  pieceHashKeys[WHITE_PAWN][square];
-			else if (*pieceBB & chessPosition->whiteRooksBB)   hashkey |=  pieceHashKeys[WHITE_ROOK][square];
-			else if (*pieceBB & chessPosition->whiteBishopsBB) hashkey |=  pieceHashKeys[WHITE_BISHOP][square];
-			else if (*pieceBB & chessPosition->whiteQueensBB)  hashkey |=  pieceHashKeys[WHITE_QUEEN][square];
-			else if (*pieceBB & chessPosition->whiteKnightsBB) hashkey |=  pieceHashKeys[WHITE_KNIGHT][square];
-			else if (*pieceBB & chessPosition->whiteKingBB)	   hashkey |=  pieceHashKeys[WHITE_KING][square];
-		}
-
-		if (*pieceBB & chessPosition->blackPiecesBB)
-		{
-			if		(*pieceBB & chessPosition->blackPawnsBB)   hashkey |=  pieceHashKeys[BLACK_PAWN][square];
-			else if (*pieceBB & chessPosition->blackRooksBB)   hashkey |=  pieceHashKeys[BLACK_ROOK][square];
-			else if (*pieceBB & chessPosition->blackBishopsBB) hashkey |=  pieceHashKeys[BLACK_BISHOP][square];
-			else if (*pieceBB & chessPosition->blackQueensBB)  hashkey |=  pieceHashKeys[BLACK_QUEEN][square];
-			else if (*pieceBB & chessPosition->blackKnightsBB) hashkey |=  pieceHashKeys[BLACK_KNIGHT][square];
-			else if (*pieceBB & chessPosition->blackKingBB)	   hashkey |=  pieceHashKeys[BLACK_KING][square];
-		}
-
-		return hashkey;
-	}
-
 	// returns a newly generated zobrist key
 	zkey generate(ChessPosition* chessPosition)
 	{
@@ -133,39 +104,13 @@ namespace ZobristKey
 		}
 
 		// XOR the hash key for the castle privileges of the current position
-		zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
+		// zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
 
 		// XOR the hash key for the en passant square currently set in the position (if there are any at all)
-		zobristKey ^= enpassantHashKeys[chessPosition->enPassantSquare];
-
-		// XOR the hash key for the side to move (XORING it only if the side to move is white)
-		if (!chessPosition->sideToMove)
-			zobristKey ^= sideToPlayHashKey;
-
-		return zobristKey;
-	}
-
-	// uses bit manipulation to update the zobrist key based on a move that occured
-	// note that due to the nature of the bitwise XOR operator, one could call this function again with
-	// the same move, and the zobrist key returned would be reverted to before the original call was made
-	zkey update(zkey zobristKey, ChessPosition* chessPosition, MoveData* moveData)
-	{
-		// XOR the hash keys for the piece that made the move (based on where it went, and where it came from)
-		zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->originSquare);
-		zobristKey ^= getPieceHashKey(chessPosition, moveData->pieceBB, moveData->targetSquare);
-
-		// XOR the hash key for the piece that was captured (based on where the piece once was), if one was captured at all
-		if (moveData->capturedPieceBB)
-			zobristKey ^= getPieceHashKey(chessPosition, moveData->capturedPieceBB, moveData->targetSquare);
-
-		// XOR the hash key for the current position's castle privileges
-		zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
-
-		// XOR the hash key for the current position's en passant square
 		if (chessPosition->enPassantSquare != NO_SQUARE)
 			zobristKey ^= enpassantHashKeys[chessPosition->enPassantSquare];
 
-		// XOR the hash key for the side to move (if the side to move is white)
+		// XOR the hash key for the side to move (XORING it only if the side to move is white)
 		if (!chessPosition->sideToMove)
 			zobristKey ^= sideToPlayHashKey;
 

@@ -85,10 +85,9 @@ private:
 								  Byte bestMoveOriginSquare,
 								  int depth, 
                                   int eval,
-								  TranspositionHashEntry::HashFlagValues flag,
-                                  Colour side);
+								  TranspositionHashEntry::HashFlagValues flag);
                                   
-    int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta, Colour side);
+    int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta);
     
     int negamax
         (

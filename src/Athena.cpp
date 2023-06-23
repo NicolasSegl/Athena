@@ -153,8 +153,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 									  Byte bestMoveOriginSquare, 
 									  int depth, 
 									  int eval, 
-									  TranspositionHashEntry::HashFlagValues flag,
-                                      Colour side)
+									  TranspositionHashEntry::HashFlagValues flag)
 {
     // fetch the entry currently in the table by the given zobrist key
     TranspositionHashEntry* currentEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
@@ -167,19 +166,15 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
     currentEntry->hashFlag = flag;
     currentEntry->bestMoveOriginSquare = bestMoveOriginSquare;
     currentEntry->zobristKey = zobristKey;
-    currentEntry->side = side;
 }
 
 // reads the data from the transposition table given the zobrist key's hash value
 // if no such entry exists yet, then a value is returned indicating that no entry could be found
-int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta, Colour side)
+int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta)
 {
 	TranspositionHashEntry* hashEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
 	if (hashEntry->zobristKey == zobristKey && hashEntry->depth >= depth)
 	{
-        if (hashEntry->side != side)
-            return NO_TT_SCORE;
-
         if (hashEntry->hashFlag == TranspositionHashEntry::EXACT)
             return hashEntry->eval;
 		else if (hashEntry->hashFlag == TranspositionHashEntry::UPPER_BOUND && hashEntry->eval <= alpha)
@@ -421,12 +416,21 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
 
-    int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta, side);
+    // if and only if we have searched every single node will the transposition table's hash flag be EXACT
+    // and so until then, it will be set as an UPPER_BOUND 
     TranspositionHashEntry::HashFlagValues hashFlag = TranspositionHashEntry::HashFlagValues::UPPER_BOUND;
-    int isPvNode = beta - alpha > 1;
 
-    if (ttScore != NO_TT_SCORE && depth != mDepth && isPvNode == 0)
-       return ttScore;
+    // only check the transposition table if we are not at the top level of the tree and
+    // if the node we are searching is a not a null move/pv search node (beta - alpha > 1)
+    if (ply && beta - alpha > 1)
+    {
+        // get the evaluation from the transposition table (if one exists)
+        int ttScore = readTranspositionEntry(positionZKey, depth, alpha, beta);
+
+        // immediately return the evaluation from the transposition table (if one was found)
+        if (ttScore != NO_TT_SCORE)
+            return ttScore;
+    }
 
     // return an evaluation of 0 if a draw occured
     if (Outcomes::isDraw(boardPtr))
@@ -565,7 +569,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             // then we shouldn't bother searching any farther
             if (beta <= eval)
             {
-                insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND, side);
+                insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
                 
                 // if the move was quiet, insert it into the killer move table. this will allow for better move prioritizing in 
                 // future searches (as it will know to assign this move a higher weight, even though it is seemingly not an extraordinary move)
@@ -590,7 +594,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             return 0;
     }	
 
-    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, alpha, hashFlag, side);
+    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, alpha, hashFlag);
 
     return alpha;
 }

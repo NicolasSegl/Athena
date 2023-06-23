@@ -29,7 +29,4 @@ struct TranspositionHashEntry
 
 	// used for determining whether or not the entry was made after an alpha/beta cutoff (or neither)
 	Byte hashFlag = HashFlagValues::NONEXISTENT;
-
-    // for testing
-    Colour side;
 };

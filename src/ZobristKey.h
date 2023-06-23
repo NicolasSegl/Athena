@@ -13,5 +13,4 @@ namespace ZobristKey
 	
 	void init();
 	zkey generate(ChessPosition* chessPosition);
-	zkey update(zkey zobristKey, ChessPosition* chessPosition, MoveData* moveData);
 }

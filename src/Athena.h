@@ -8,6 +8,7 @@
 #include "Board.h"
 #include "DataTypes.h"
 #include "MoveData.h"
+#include "TranspositionHashEntry.h"
 
 // this class defines the engine itself and is how the best move for a given position is found
 class Athena
@@ -75,6 +76,18 @@ private:
     MoveData** mKillerMoves;
 
     void insertKillerMove(MoveData& move, Byte ply);
+    
+    // points to a large table of transpositions 
+    TranspositionHashEntry* mTranspositionTable;
+
+    void clearTranspositionTable();
+    void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
+								  int bestMoveIndex, 
+								  int depth, 
+                                  int eval,
+								  TranspositionHashEntry::HashFlagValues flag,
+                                  Colour side);
+    int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta, Colour side);
     
     int negamax
         (

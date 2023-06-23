@@ -104,14 +104,14 @@ namespace ZobristKey
 		}
 
 		// XOR the hash key for the castle privileges of the current position
-		// zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
+		zobristKey ^= castleHashKeys[chessPosition->castlePrivileges];
 
 		// XOR the hash key for the en passant square currently set in the position (if there are any at all)
 		if (chessPosition->enPassantSquare != NO_SQUARE)
 			zobristKey ^= enpassantHashKeys[chessPosition->enPassantSquare];
 
 		// XOR the hash key for the side to move (XORING it only if the side to move is white)
-		if (!chessPosition->sideToMove)
+		if (chessPosition->sideToMove == SIDE_BLACK)
 			zobristKey ^= sideToPlayHashKey;
 
 		return zobristKey;

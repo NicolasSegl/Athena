@@ -16,12 +16,13 @@ namespace Eval
     const int PAWN_PASSED_BONUS      = 30;
 
     // rook structure values
+    const int CONNECTED_ROOK_BONUS      = 10;
     const int ROOK_OPEN_FILE_BONUS      = 30;
     const int ROOK_HALF_OPEN_FILE_BONUS = 20;
 
     // king midgame structure values
     const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
-    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 0;//1;
+    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 1;
 
     // pawn hash table 
     struct PawnHashTableEntry
@@ -183,12 +184,15 @@ namespace Eval
     {
         int structureValue = 0;
 
-        // penalties for if there is an open file next to king
+        /* penalties for if there is an open file next to king */
+
+        // if the king is not on the A file
         if (square % 8 > 0)
         {
             if (!(BB::westFile[square % 8] & friendlyPiecesBB))
                 structureValue -= KING_MIDGAME_OPEN_FILE_PENALTY;
         }
+        // if the king is not on the H file
         if (square % 8 < 7)
         {
             if (!(BB::eastFile[square % 8] & friendlyPiecesBB))
@@ -224,7 +228,7 @@ namespace Eval
 
         // connected rooks bonus
         if (MoveGeneration::computePseudoRookMoves(square, friendlyPiecesBB | enemyPiecesBB, friendlyPiecesBB) & friendlyRooksBB)
-            structureValue += 10;
+            structureValue += CONNECTED_ROOK_BONUS;
         
         // open file bonus
         if (!(bitsSetInFile & occupiedBB))

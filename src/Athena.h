@@ -82,11 +82,12 @@ private:
 
     void clearTranspositionTable();
     void insertTranspositionEntry(ZobristKey::zkey zobristKey, 
-								  int bestMoveIndex, 
+								  Byte bestMoveOriginSquare,
 								  int depth, 
                                   int eval,
 								  TranspositionHashEntry::HashFlagValues flag,
                                   Colour side);
+                                  
     int readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta, Colour side);
     
     int negamax

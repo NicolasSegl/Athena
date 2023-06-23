@@ -150,7 +150,7 @@ std::string Athena::getOpeningBookMove(Board* boardPtr, const std::vector<std::s
 // in essence, it checks whether or not the move that was just considered by Athena was more or less accurate than the current
 // entry in the index given by the zobrist key. if it is less accurate, no replacement occurs.
 void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey, 
-									  int bestMoveIndex, 
+									  Byte bestMoveOriginSquare, 
 									  int depth, 
 									  int eval, 
 									  TranspositionHashEntry::HashFlagValues flag,
@@ -165,7 +165,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
     currentEntry->depth = depth;
     currentEntry->eval = eval;
     currentEntry->hashFlag = flag;
-    currentEntry->bestMoveIndex = bestMoveIndex;
+    currentEntry->bestMoveOriginSquare = bestMoveOriginSquare;
     currentEntry->zobristKey = zobristKey;
     currentEntry->side = side;
 }
@@ -225,13 +225,30 @@ int Athena::pieceValueTo_MVV_LVA_Index(int value)
 // move, as as higher value indicates that the move might be better than another move with a lower value
 void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey)
 {
+    /* consider as well the best move found in the transposition table */
+    // stores the origin square of the best move in the transposition table
+    Byte bestMoveOriginSquare = 0;
+
+    // check to see if the zkey passed in as a paremeter has an associated best move in the transposition table
+    if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
+        bestMoveOriginSquare = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveOriginSquare;
+
     for (int i = 0; i < moves.size(); i++)
     {
+        if (bestMoveOriginSquare)
+        {
+            if (moves[i].originSquare == bestMoveOriginSquare)
+            {
+                moves[i].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+                continue;
+            }
+        }
+
         // if the move is violent (i.e. involves a piece being captured), then assign a move score based on
         // the attacking piece's type and the victim piece's type
         if (moves[i].capturedPieceBB)
             moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[pieceValueTo_MVV_LVA_Index(moves[i].capturedPieceValue)]
-                                                               [pieceValueTo_MVV_LVA_Index(moves[i].pieceValue)]; // make a function to convert 1, 3, 5, 9 to index?
+                                                               [pieceValueTo_MVV_LVA_Index(moves[i].pieceValue)];
         else // otherwise, if the move is quiet (no piece being captured)
         {
             // check to see if the move was a killer move in a previous search (that is, check to see if the move
@@ -466,7 +483,9 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     // used for determining the transposition table entry's flag for this call to negamax
     int ogAlpha = alpha; 
 
-    int bestMoveIndex = -1;
+    // store the origin square of the best move found during the search
+    // these will be given to the transposition table and used in move ordering
+    Byte bestMoveOriginSquare = 255;
 	
     // populate a vector with the moves for the side to play
     std::vector<MoveData> moves;
@@ -527,7 +546,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 			if (eval > maxEval)
             {
 				maxEval = eval;
-                bestMoveIndex = i;
+                bestMoveOriginSquare = moves[i].originSquare;
             }
 
             // checks to see if this move is better than the previosuly thought best move for this turn
@@ -546,7 +565,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             // then we shouldn't bother searching any farther
             if (beta <= eval)
             {
-                insertTranspositionEntry(positionZKey, bestMoveIndex, depth, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND, side);
+                insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND, side);
                 
                 // if the move was quiet, insert it into the killer move table. this will allow for better move prioritizing in 
                 // future searches (as it will know to assign this move a higher weight, even though it is seemingly not an extraordinary move)
@@ -571,7 +590,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             return 0;
     }	
 
-    insertTranspositionEntry(positionZKey, bestMoveIndex, depth, alpha, hashFlag, side);
+    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, alpha, hashFlag, side);
 
     return alpha;
 }

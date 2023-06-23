@@ -18,8 +18,8 @@ struct TranspositionHashEntry
 	// positions actually match the entry's (which would allow us to use the information in the table entry)
 	ZobristKey::zkey zobristKey = 0;
 
-	// stores the index of the best move of a search in the move vector, used for the sake of move ordering
-	int bestMoveIndex = -1;
+	// stores the origin square of the best move found during the search (used for move ordering)
+	Byte bestMoveOriginSquare = 255;
 
 	// stores the depth of the search (i.e., how far it searched down the tree of possible moves from the position)
 	int depth = 0;

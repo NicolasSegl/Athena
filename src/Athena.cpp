@@ -168,38 +168,6 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
     currentEntry->bestMoveIndex = bestMoveIndex;
     currentEntry->zobristKey = zobristKey;
     currentEntry->side = side;
-
-    /*
-        if there exists a position at this index already, we need to see if we should replace it
-        if our current entry has searched further, then we will replace the current table entry
-    */
-   /*
-    if (currentEntry->zobristKey)
-    {
-		// the higher the depth, the further the node has been searched
-        if (currentEntry->depth >= depth)
-			return; // if not too old, then return (i.e. do not replace)
-    }
-
-    // if the moves that the evaluation tried to search from its position all failed high
-    if (eval <= ogAlpha)
-	{
-		 currentEntry->hashFlag = TranspositionHashEntry::UPPER_BOUND;
-		 eval = alpha;
-	}
-    // if the evaluation for this transposition was better than the moves already searched in sibling nodes 
-    else if (eval >= beta) 
-		currentEntry->hashFlag = TranspositionHashEntry::LOWER_BOUND;
-    // if the evaluation for this transposition was better than the moves found in sibling nodes, but still reached the end of the search tree
-    else
-        currentEntry->hashFlag = TranspositionHashEntry::EXACT;
-
-    // set the other data for the entry based on the move just evaluated
-    currentEntry->eval = eval;
-	currentEntry->depth = depth;
-	currentEntry->zobristKey = zobristKey;
-	currentEntry->bestMoveIndex = bestMoveIndex;
-    */
 }
 
 // reads the data from the transposition table given the zobrist key's hash value

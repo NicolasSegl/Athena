@@ -11,6 +11,7 @@
 namespace Eval
 {
     // pawn structure values
+    const int BLOCKED_PAWN_PENALTY   = 5;
     const int PAWN_DOUBLED_PENALTY   = 10;
     const int PAWN_ISOLATED_PENALTY  = 20;
     const int PAWN_PASSED_BONUS      = 30;
@@ -79,7 +80,7 @@ namespace Eval
     }
 
     // calculates the value of a pawn based on its structure
-    int evaluatePawnStructure(Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB)
+    int evaluatePawnStructure(Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB, ChessPosition& position)
     {
         // if there are no pawns left, return an evaluation of 0
         if (!friendlyPawnsBB)
@@ -99,8 +100,12 @@ namespace Eval
                 if ((BB::fileMask[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
                     structureValue -= PAWN_DOUBLED_PENALTY;
 
+                if ((friendlyPawnsBB == position.whitePawnsBB && (BB::northOne(BB::boardSquares[square]) & position.blackPiecesBB)) || 
+                    (friendlyPawnsBB == position.blackPawnsBB && (BB::southOne(BB::boardSquares[square]) & position.whitePiecesBB)))
+                    structureValue -= BLOCKED_PAWN_PENALTY;
+
                 // isolated pawns penalty
-                if (!(BB::adjacentFiles[square % 8] & friendlyPawnsBB))
+                else if (!(BB::adjacentFiles[square % 8] & friendlyPawnsBB))
                     structureValue -= PAWN_ISOLATED_PENALTY;
                 // if the pawn is not isolated, it may be backwards
                 else
@@ -246,8 +251,8 @@ namespace Eval
         ChessPosition& position = boardPtr->currentPosition;
         
         // initialize the white and black side's evaluation using the evaluation for their pawn structures
-        int whiteEval = evaluatePawnStructure(position.whitePawnsBB, position.blackPawnsBB);
-        int blackEval = evaluatePawnStructure(position.blackPawnsBB, position.whitePawnsBB);
+        int whiteEval = evaluatePawnStructure(position.whitePawnsBB, position.blackPawnsBB, position);
+        int blackEval = evaluatePawnStructure(position.blackPawnsBB, position.whitePawnsBB, position);
         
         for (int square = 0; square < 64; square++)
         {

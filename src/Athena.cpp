@@ -527,7 +527,13 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 
             // if a pawn can be promoted, always assume a queen promotion for simplicity sake
             if (moves[i].moveType == MoveType::PAWN_PROMOTION)
+            {
                 boardPtr->promotePiece(&moves[i], MoveType::QUEEN_PROMO);
+
+                // promoted pawn extension: increase the search depth by 1 ply if the move involved a pawn being promoted
+                if (depth == 1)
+                    extension += 1;
+            }
 
             /*
             Principial Variation Search (pvs):

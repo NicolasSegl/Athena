@@ -32,7 +32,7 @@ const int TIME_CHECK_INTERVAL = 100;
 Athena::Athena()
 {   
     // default depth of 8 half-moves, with a maximum number of half-moves being searched of 20
-    mDepth = 8;
+    mDepth = 7;
     mMaxPly = 20;
 
     mTranspositionTable = new TranspositionHashEntry[TRANSPOSITION_TABLE_SIZE];
@@ -414,6 +414,10 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     if (mHaltSearch)
        return 0;
 
+    // halt the search if we begin to search past the maximum number of plys
+    if (ply >= mMaxPly)
+        return alpha;
+
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
 
     // if and only if we have searched every single node will the transposition table's hash flag be EXACT
@@ -451,13 +455,18 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     }
     else
     {
-        checkTimeLeft();
+        // checkTimeLeft();
         mNodes++;
     }
 
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
     Byte kingSquare = boardPtr->computeKingSquare(kingBB);
     bool inCheck = boardPtr->squareAttacked(kingSquare, !side);
+
+    // stores the search extension (in number of plys) that we must extend the search by
+    int extension = 0;
+    if (inCheck && ply)
+      extension += 1;
         
     // if for whatever reason the side to play has no king, return a huge negative value
     if (!kingBB)
@@ -504,11 +513,18 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     bool foundPVMove = false;
     for (int i = 0; i < moves.size(); i++)
     {
-        selectMove(moves, i); // swaps current move with the most likely good move in the move list
+        // swaps current move with the most likely good move in the move list
+        selectMove(moves, i);
 
         // if the move is legal (i.e. wouldn't result in a check)
         if (boardPtr->makeMove(&moves[i]))
         {
+            // recapture extension: search an extra ply if the move was a recapture (i.e., it captures the piece that just captured)
+            // this move is considered forced and should therefore be searched further for tactical purposes
+            if (lastMove)
+                if (moves[i].targetSquare == lastMove->targetSquare && moves[i].pieceValue == lastMove->pieceValue) 
+                    extension += 1;
+
             // if a pawn can be promoted, always assume a queen promotion for simplicity sake
             if (moves[i].moveType == MoveType::PAWN_PROMOTION)
                 boardPtr->promotePiece(&moves[i], MoveType::QUEEN_PROMO);
@@ -520,7 +536,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             */
             int eval;
             if (!foundPVMove)
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, isReducedSearch);
+                eval = -negamax(depth - 1 + extension, !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, isReducedSearch);
             else
             {
                 /*
@@ -529,9 +545,9 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
                     if it is possible (the evaluation is greater than our current alpha), then research the whole tree to find the new
                     best move (PV move)
                 */
-                eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -alpha - 1, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, true);
+                eval = -negamax(depth - 1 + extension, !side, -alpha - 1, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, true);
                 if (eval > alpha)
-                    eval = -negamax(depth - 1 + calculateExtension(side, kingSquare), !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, isReducedSearch);
+                    eval = -negamax(depth - 1 + extension, !side, -beta, -alpha, ply + 1, &moves[i], CAN_NULL_MOVE, isReducedSearch);
             }
 
             // unmake the move as to assume the board position prior to the move
@@ -569,7 +585,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             // then we shouldn't bother searching any farther
             if (beta <= eval)
             {
-                insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
+                insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth + extension, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
                 
                 // if the move was quiet, insert it into the killer move table. this will allow for better move prioritizing in 
                 // future searches (as it will know to assign this move a higher weight, even though it is seemingly not an extraordinary move)
@@ -594,7 +610,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             return 0;
     }	
 
-    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, alpha, hashFlag);
+    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth + extension, alpha, hashFlag);
 
     return alpha;
 }

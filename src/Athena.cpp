@@ -585,20 +585,20 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
                 // update the history heuristic table for future move prioritizing if the move is quiet (i.e. a non-capture move)
                 if (!moves[i].capturedPieceBB)
                     mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare] += depth * depth;
-            }
 
-            // this is a beta cutoff. it pretty much says that if this move is so good that the other side would never allow it,
-            // then we shouldn't bother searching any farther
-            if (beta <= eval)
-            {
-                insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth + extension, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
-                
-                // if the move was quiet, insert it into the killer move table. this will allow for better move prioritizing in 
-                // future searches (as it will know to assign this move a higher weight, even though it is seemingly not an extraordinary move)
-                if (!moves[i].capturedPieceBB)
-                    insertKillerMove(moves[i], ply);
+                // this is a beta cutoff. it pretty much says that if this move is so good that the other side would never allow it,
+                // then we shouldn't bother searching any farther
+                if (beta <= eval)
+                {
+                    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth + extension, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
+                    
+                    // if the move was quiet, insert it into the killer move table. this will allow for better move prioritizing in 
+                    // future searches (as it will know to assign this move a higher weight, even though it is seemingly not an extraordinary move)
+                    if (!moves[i].capturedPieceBB)
+                        insertKillerMove(moves[i], ply);
 
-                return beta;
+                    return beta;
+                }
             }
         }
     }

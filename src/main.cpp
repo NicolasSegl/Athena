@@ -9,7 +9,7 @@
 int main()
 {
 	// seed the random function
-	std::srand(time(NULL));
+	std::srand(1351241596345);
 
 	// listen to UCI commands
 	UCI::run();

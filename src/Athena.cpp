@@ -222,7 +222,7 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
 {
     /* consider as well the best move found in the transposition table */
     // stores the origin square of the best move in the transposition table
-    Byte bestMoveOriginSquare = 0;
+    Byte bestMoveOriginSquare = 255;
 
     // check to see if the zkey passed in as a paremeter has an associated best move in the transposition table
     if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
@@ -230,7 +230,7 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
 
     for (int i = 0; i < moves.size(); i++)
     {
-        if (bestMoveOriginSquare)
+        if (bestMoveOriginSquare != 255)
         {
             if (moves[i].originSquare == bestMoveOriginSquare)
             {

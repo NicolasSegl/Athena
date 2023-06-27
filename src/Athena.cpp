@@ -25,6 +25,8 @@ const bool CANNOT_NULL_MOVE = false;
 
 const int NO_TT_SCORE = -9999999;
 
+const int MAX_ROOT_DEPTH = 12;
+
 // this number defines the number of nodes that will be searched between each check of time
 const int TIME_CHECK_INTERVAL = 100;
 
@@ -74,14 +76,30 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     mMoveToMake.moveType = MoveType::INVALID;
 
     mStartTime = std::chrono::steady_clock::now();
-    std::cout << "max eval: " << negamax(mDepth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE, false) << std::endl;
+
+    int eval;
+    MoveData fullySearchedBestMove;
+    for (int depth = 1; depth <= MAX_ROOT_DEPTH; depth++)
+    {
+        if (!mHaltSearch)
+        {
+            eval = negamax(depth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE, false);
+            if (!mHaltSearch)
+                fullySearchedBestMove = mMoveToMake;
+        }
+        else
+            break;
+    }
+
+    std::cout << "max eval: " << eval << std::endl;
+    
     auto afterTime = std::chrono::steady_clock::now();
     
     // output some rudimentary data about the search
     std::cout << "time elapsed: " << std::chrono::duration<double>(afterTime - mStartTime).count() << std::endl;
     std::cout << "num of nodes: " << mNodes << std::endl;
 
-    return mMoveToMake;
+    return fullySearchedBestMove;
 }
 
 /*
@@ -450,7 +468,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     }
     else
     {
-        // checkTimeLeft();
+        checkTimeLeft();
         mNodes++;
     }
 

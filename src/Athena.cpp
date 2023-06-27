@@ -25,7 +25,7 @@ const bool CANNOT_NULL_MOVE = false;
 
 const int NO_TT_SCORE = -9999999;
 
-const int MAX_ROOT_DEPTH = 12;
+const int MAX_ROOT_DEPTH = 50;
 
 // this number defines the number of nodes that will be searched between each check of time
 const int TIME_CHECK_INTERVAL = 100;

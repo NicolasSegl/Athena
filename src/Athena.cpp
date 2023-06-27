@@ -231,13 +231,8 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
     for (int i = 0; i < moves.size(); i++)
     {
         if (bestMoveOriginSquare != 255)
-        {
             if (moves[i].originSquare == bestMoveOriginSquare)
-            {
                 moves[i].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
-                continue;
-            }
-        }
 
         // if the move is violent (i.e. involves a piece being captured), then assign a move score based on
         // the attacking piece's type and the victim piece's type
@@ -466,7 +461,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     // stores the search extension (in number of plys) that we must extend the search by
     int extension = 0;
     if (inCheck && ply)
-      extension += 1;
+     extension += 1;
         
     // if for whatever reason the side to play has no king, return a huge negative value
     if (!kingBB)
@@ -522,8 +517,8 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             // recapture extension: search an extra ply if the move was a recapture (i.e., it captures the piece that just captured)
             // this move is considered forced and should therefore be searched further for tactical purposes
             if (lastMove)
-                if (moves[i].targetSquare == lastMove->targetSquare && moves[i].pieceValue == lastMove->pieceValue) 
-                    extension += 1;
+               if (moves[i].targetSquare == lastMove->targetSquare && moves[i].pieceValue == lastMove->pieceValue) 
+                   extension += 1;
 
             // if a pawn can be promoted, always assume a queen promotion for simplicity sake
             if (moves[i].moveType == MoveType::PAWN_PROMOTION)
@@ -532,7 +527,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
 
                 // promoted pawn extension: increase the search depth by 1 ply if the move involved a pawn being promoted
                 if (depth == 1)
-                    extension += 1;
+                   extension += 1;
             }
 
             /*
@@ -590,7 +585,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
                 // then we shouldn't bother searching any farther
                 if (beta <= eval)
                 {
-                    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth + extension, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
+                    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, beta, TranspositionHashEntry::HashFlagValues::LOWER_BOUND);
                     
                     // if the move was quiet, insert it into the killer move table. this will allow for better move prioritizing in 
                     // future searches (as it will know to assign this move a higher weight, even though it is seemingly not an extraordinary move)
@@ -616,7 +611,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
             return 0;
     }	
 
-    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth + extension, alpha, hashFlag);
+    insertTranspositionEntry(positionZKey, bestMoveOriginSquare, depth, alpha, hashFlag);
 
     return alpha;
 }

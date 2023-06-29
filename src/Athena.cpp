@@ -9,8 +9,8 @@
 #include "Outcomes.h"
 #include "utils.h"
 
-// represents infinity
-const int INF = std::numeric_limits<int>::max();
+// 1 billion represents infinity
+const int INF = 1000000000;
 
 // move ordering constants
 const int MVV_LVA_OFFSET    = 10000000;

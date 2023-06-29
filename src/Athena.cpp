@@ -27,6 +27,8 @@ const int NO_TT_SCORE = -9999999;
 
 const int MAX_ROOT_DEPTH = 50;
 
+const int ASPIRATION_WINDOW = 50;
+
 // this number defines the number of nodes that will be searched between each check of time
 const int TIME_CHECK_INTERVAL = 100;
 
@@ -78,14 +80,32 @@ MoveData Athena::search(Board* ptr, float timeToMove)
     mStartTime = std::chrono::steady_clock::now();
 
     int eval;
+    int alpha = -INF;
+    int beta  =  INF; 
+
     MoveData fullySearchedBestMove;
     for (int depth = 1; depth <= MAX_ROOT_DEPTH; depth++)
-    {
+    {   
         if (!mHaltSearch)
         {
-            eval = negamax(depth, mSide, -INF, INF, 0, nullptr, CAN_NULL_MOVE, false);
-            if (!mHaltSearch)
-                fullySearchedBestMove = mMoveToMake;
+            eval = negamax(depth, mSide, alpha, beta, 0, nullptr, CAN_NULL_MOVE, false);
+
+            // if the evaluation broke out of the aspiration window, then we need to research with the same depth with a full window
+            // this means we will have to decrement depth (so that the next iteration in the loop is at the same depth)
+            if (eval <= alpha || eval >= beta)
+            {
+                alpha = -INF;
+                beta  =  INF;
+                depth--;
+            }
+            else
+            {
+                alpha = eval - ASPIRATION_WINDOW;
+                beta  = eval + ASPIRATION_WINDOW;
+
+                if (!mHaltSearch)
+                    fullySearchedBestMove = mMoveToMake;
+            }
         }
         else
             break;

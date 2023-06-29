@@ -100,8 +100,8 @@ namespace Eval
                 if ((BB::fileMask[square % 8] & ~BB::boardSquares[square]) & friendlyPawnsBB)
                     structureValue -= PAWN_DOUBLED_PENALTY;
 
-                if ((friendlyPawnsBB == position.whitePawnsBB && (BB::northOne(BB::boardSquares[square]) & position.blackPiecesBB)) || 
-                    (friendlyPawnsBB == position.blackPawnsBB && (BB::southOne(BB::boardSquares[square]) & position.whitePiecesBB)))
+                else if ((friendlyPawnsBB == position.whitePawnsBB && (BB::northOne(BB::boardSquares[square]) & position.occupiedBB)) || 
+                    (friendlyPawnsBB == position.blackPawnsBB && (BB::southOne(BB::boardSquares[square]) & position.occupiedBB)))
                     structureValue -= BLOCKED_PAWN_PENALTY;
 
                 // isolated pawns penalty

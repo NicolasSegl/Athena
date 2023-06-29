@@ -54,8 +54,9 @@ namespace UCI
 		{
 			// if the FEN string being fed to the engine via UCI is not the starting position of a chess game,
 			// then we'll need to get all 6 parts of the FEN string and then give it to the board
+			// note that commandVec[1] in this case would be "fen", so we start at i = 2
 			std::string fenString = "";
-			for (int i = 1; i <= 6; i++)
+			for (int i = 2; i <= 7; i++)
 				fenString += commandVec[i] + " ";
 
 			// popping the last value off of the FEN string we've put into an std::string will get rid of the final space at the end

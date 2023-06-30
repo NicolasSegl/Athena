@@ -536,7 +536,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         // notice that we pass in -beta, -beta+1 instead of -beta, -alpha
         // this sets the upper bound to being just 1 greater than the lower bound
         // meaning that any move that is better than the lower bound by just a single point will cause a cutoff
-        int eval = -negamax(depth - 1 - 2, !side, -beta, -beta+1, ply + 1, lastMove, false, true);
+        int eval = -negamax(depth - 1 - 2, !side, -beta, -beta+1, ply + 1, lastMove, CANNOT_NULL_MOVE, true);
 
         // if, without making any move, the evaluation comes back and is STILL better than the current worst move, make a cutoff
         if (eval >= beta)

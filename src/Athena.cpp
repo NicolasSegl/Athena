@@ -85,7 +85,7 @@ MoveData Athena::search(Board* ptr, float timeToMove)
 
     MoveData fullySearchedBestMove;
     for (int depth = 1; depth <= MAX_ROOT_DEPTH; depth++)
-    {   
+    {
         if (!mHaltSearch)
         {
             eval = negamax(depth, mSide, alpha, beta, 0, nullptr, CAN_NULL_MOVE, false);
@@ -237,14 +237,15 @@ void Athena::selectMove(std::vector<MoveData>& moves, Byte startIndex)
 // converts the type of the piece into the value that can be used for indexing the MVV_LVA table
 int Athena::pieceValueTo_MVV_LVA_Index(int value)
 {
+    // one value from this switch case is missing: the BISHOP_VALUE
+    // this is becauase the knight and the bishop share the same innate material value
+    // and so it makes no difference if we index to the knight or the bishop part of the MVV_LVA table
     switch (value)
     {
     case Eval::PAWN_VALUE:
         return PIECE_TYPE_PAWN;
     case Eval::KNIGHT_VALUE:
         return PIECE_TYPE_KNIGHT;
-    case Eval::BISHOP_VALUE:
-        return PIECE_TYPE_BISHOP;
     case Eval::ROOK_VALUE:
         return PIECE_TYPE_ROOK;
     case Eval::QUEEN_VALUE:
@@ -358,8 +359,6 @@ int Athena::getPieceValue(PieceTypes pieceType)
 // and evaluates them slightly further than the default depth, as to prevent the horizon problem
 int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 {
-    mNodes++;
-
     // represents as a decimal how far into the midgame we are. A value of 1.0 indicates the start, and a value of 0.0 would represent endgame
     float midgameValue = Eval::getMidgameValue(boardPtr->currentPosition.occupiedBB);
 
@@ -477,6 +476,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     // if we must search a little deeper to see if a dangerous move is lurking around the horizon for the side to play
     if (depth <= 0)
     {
+        mNodes++;
         if (lastMove)
             if (lastMove->capturedPieceBB) // this indicates a violent move. it means that we should search until we encounter only quiet (non-capture) moves
                 return quietMoveSearch(side, alpha, beta, ply);
@@ -487,10 +487,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         return Eval::evaluateBoardRelativeTo(side, Eval::evaluatePosition(boardPtr, midgameValue));
     }
     else
-    {
         checkTimeLeft();
-        mNodes++;
-    }
 
     Bitboard kingBB = side == SIDE_WHITE ? boardPtr->currentPosition.whiteKingBB : boardPtr->currentPosition.blackKingBB;
     Byte kingSquare = boardPtr->computeKingSquare(kingBB);

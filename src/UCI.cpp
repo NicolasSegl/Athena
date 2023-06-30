@@ -68,7 +68,7 @@ namespace UCI
 
 			// because the FEN string took up extra elements of the commands vector, the index at which the LAN moves (if any)
 			// starts is now at an index of 7
-			movesCommandIndex = 7;
+			movesCommandIndex = 8;
 		}
 
 		// iterate over any possible moves from the FEN string provided that have occured, and make them using the engine's abstractions

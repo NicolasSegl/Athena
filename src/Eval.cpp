@@ -23,7 +23,19 @@ namespace Eval
 
     // king midgame structure values
     const int KING_MIDGAME_OPEN_FILE_PENALTY = 50;
-    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 1;
+    const int KING_MIDGAME_PAWN_SHIELD_BONUS = 5;
+
+    // bishop structure values
+    const int BLOCKED_BISHOP_PENALTY = 10;
+    const int BISHOP_PAIR_BONUS      = 50;
+    const int MINOR_TRAPPED_BISHOP_PENALTY = 50;
+    const int MAJOR_TRAPPED_BISHOP_PENALTY = 150;
+
+    // knight structure values
+    const int MINOR_TRAPPED_KNIGHT_PENALTY   = 100;
+    const int MAJOR_TRAPPED_KNIGHT_PENALTY   = 150;
+    const int OUTPOST_BONUS = 12;
+    const int KNIGHT_PAWN_COUNT_ADJUSTMENT[] = { -20, -16, -12, -8, -4,  0,  4,  8, 12 };
 
     // pawn hash table 
     struct PawnHashTableEntry
@@ -183,6 +195,161 @@ namespace Eval
         return shieldValue;
     }
 
+    // evaluates the structual position of a bishop
+    inline int bishopStructureValue(Byte square, Colour side, Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB)
+    {
+        int structureValue = 0;
+
+        // this will check whether the bishop is a bad bishop (i.e. blocked by its own pawns)
+        // it accomplishes this by checking if a pawn would be attacking friendly pawns at the bishop's position
+        Bitboard pawnsBlockingBB = friendlyPawnsBB & MoveGeneration::pawnAttackLookupTable[side][square];
+        structureValue -= BLOCKED_BISHOP_PENALTY * countSetBits64(pawnsBlockingBB);
+
+        // this checks whether the bishop is trapped on some tiles that are particularly terrible for 
+        // a bishop to be trapped on. such a terrible spot to be in should be heavily penalized
+        if (side == SIDE_WHITE)
+        {
+            switch (square)
+            {
+                case ChessCoord::A7: if (enemyPawnsBB & BB::boardSquares[ChessCoord::B6]) structureValue -= MAJOR_TRAPPED_BISHOP_PENALTY; break;
+                case ChessCoord::H7: if (enemyPawnsBB & BB::boardSquares[ChessCoord::G6]) structureValue -= MAJOR_TRAPPED_BISHOP_PENALTY; break;
+                case ChessCoord::A6: if (enemyPawnsBB & BB::boardSquares[ChessCoord::B5]) structureValue -= MINOR_TRAPPED_BISHOP_PENALTY; break;
+                case ChessCoord::H6: if (enemyPawnsBB & BB::boardSquares[ChessCoord::G5]) structureValue -= MAJOR_TRAPPED_BISHOP_PENALTY; break;
+            }
+        }
+        else
+        {
+            switch (square)
+            {
+                case ChessCoord::A2: if (enemyPawnsBB & BB::boardSquares[ChessCoord::B3]) structureValue -= MAJOR_TRAPPED_BISHOP_PENALTY; break;
+                case ChessCoord::H2: if (enemyPawnsBB & BB::boardSquares[ChessCoord::G3]) structureValue -= MAJOR_TRAPPED_BISHOP_PENALTY; break;
+                case ChessCoord::A3: if (enemyPawnsBB & BB::boardSquares[ChessCoord::B4]) structureValue -= MINOR_TRAPPED_BISHOP_PENALTY; break;
+                case ChessCoord::H3: if (enemyPawnsBB & BB::boardSquares[ChessCoord::G4]) structureValue -= MAJOR_TRAPPED_BISHOP_PENALTY; break;
+            }
+        }
+
+        return structureValue;
+    }
+
+    // evaluates the structural position of knights
+    inline int knightStructureValue(Byte square, Colour side, Bitboard friendlyPawnsBB, Bitboard enemyPawnsBB)
+    {
+        int structureValue = 0;
+
+        // knights that are trapped by pawns should be heavily penalized
+        // outposts are knights which are on the fourth, fifth, sixth, or seventh rank 
+        // that are protected by a friendly pawn and not attacked by an opponent pawn
+        if (side == SIDE_WHITE)
+        {
+            switch (square)
+            {
+                case ChessCoord::A8: 
+                    if ((enemyPawnsBB & BB::boardSquares[ChessCoord::A7]) || (enemyPawnsBB & BB::boardSquares[ChessCoord::C7])) 
+                        structureValue -= MAJOR_TRAPPED_KNIGHT_PENALTY;
+                    break; 
+                case ChessCoord::H8:
+                    if ((enemyPawnsBB & BB::boardSquares[ChessCoord::H7]) || (enemyPawnsBB & BB::boardSquares[ChessCoord::F7])) 
+                        structureValue -= MAJOR_TRAPPED_KNIGHT_PENALTY;
+                    break; 
+                case ChessCoord::A7: 
+                    if (enemyPawnsBB & BB::boardSquares[ChessCoord::A6] && (enemyPawnsBB & BB::boardSquares[ChessCoord::B7])) 
+                        structureValue -= MINOR_TRAPPED_KNIGHT_PENALTY; 
+                    break;
+                case ChessCoord::H7: 
+                    if ((enemyPawnsBB & BB::boardSquares[ChessCoord::H6]) && (enemyPawnsBB & BB::boardSquares[ChessCoord::G7])) 
+                        structureValue -= MINOR_TRAPPED_KNIGHT_PENALTY; 
+                    break;
+            }
+
+            // outposts
+            // make sure the knight is on the fourth, fifth, sixth, or seventh rank
+            if (square >= ChessCoord::A4 && square <= ChessCoord::H7)
+            {
+                bool isProtected = false;
+                bool isAttacked = false;
+
+                // if the knight is not on the A file
+                if (square % 8 > 0)
+                {
+                    if (BB::boardSquares[square - 9] & friendlyPawnsBB)
+                        isProtected = true;
+                    if (BB::boardSquares[square + 9] & enemyPawnsBB)
+                        isAttacked = true;
+                }
+
+                // if the knight is not on the H file
+                if (square % 8 < 7)
+                {
+                    if (BB::boardSquares[square - 7] & friendlyPawnsBB)
+                        isProtected = true;
+                    if (BB::boardSquares[square + 7] & enemyPawnsBB)
+                        isAttacked = true;
+                }
+
+                // if the knight is protected and not attacked, then the knight is an outpost
+                if (isProtected && isAttacked)
+                    structureValue += OUTPOST_BONUS;
+            }
+        }
+        else
+        {
+            switch (square)
+            {
+                case ChessCoord::A1: 
+                    if ((enemyPawnsBB & BB::boardSquares[ChessCoord::A2]) || (enemyPawnsBB & BB::boardSquares[ChessCoord::C2])) 
+                        structureValue -= MAJOR_TRAPPED_KNIGHT_PENALTY;
+                    break; 
+                case ChessCoord::H1:
+                    if ((enemyPawnsBB & BB::boardSquares[ChessCoord::H2]) || (enemyPawnsBB & BB::boardSquares[ChessCoord::F2])) 
+                        structureValue -= MAJOR_TRAPPED_KNIGHT_PENALTY;
+                    break; 
+                case ChessCoord::A2: 
+                    if (enemyPawnsBB & BB::boardSquares[ChessCoord::A3] && (enemyPawnsBB & BB::boardSquares[ChessCoord::B2])) 
+                        structureValue -= MINOR_TRAPPED_KNIGHT_PENALTY; 
+                    break;
+                case ChessCoord::H2: 
+                    if ((enemyPawnsBB & BB::boardSquares[ChessCoord::H3]) && (enemyPawnsBB & BB::boardSquares[ChessCoord::G2])) 
+                        structureValue -= MINOR_TRAPPED_KNIGHT_PENALTY; 
+                    break;
+            }
+
+            // outposts
+            // make sure the knight is on the fourth, fifth, sixth, or seventh rank
+            if (square >= ChessCoord::A2 && square <= ChessCoord::H5)
+            {
+                bool isProtected = false;
+                bool isAttacked = false;
+
+                // if the knight is not on the A file
+                if (square % 8 > 0)
+                {
+                    if (BB::boardSquares[square + 9] & friendlyPawnsBB)
+                        isProtected = true;
+                    if (BB::boardSquares[square - 9] & enemyPawnsBB)
+                        isAttacked = true;
+                }
+
+                // if the knight is not on the H file
+                if (square % 8 < 7)
+                {
+                    if (BB::boardSquares[square + 7] & friendlyPawnsBB)
+                        isProtected = true;
+                    if (BB::boardSquares[square - 7] & enemyPawnsBB)
+                        isAttacked = true;
+                }
+
+                // if the knight is protected and not attacked, then the knight is an outpost
+                if (isProtected && isAttacked)
+                    structureValue += OUTPOST_BONUS;
+            }
+        }
+
+        // knights lose value as the number of pawns on the board decreases
+        structureValue += KNIGHT_PAWN_COUNT_ADJUSTMENT[countSetBits64(friendlyPawnsBB)];
+
+        return structureValue;
+    }
+
     // evaluates the structural position of the king during the midgame
     // it should be noted that the piece square tables already accomodate for pawn shields in the midgame
     int kingMidgameStructureValue(int square, Colour side, Bitboard friendlyPiecesBB, Bitboard friendlyPawnsBB)
@@ -250,9 +417,14 @@ namespace Eval
     {
         ChessPosition& position = boardPtr->currentPosition;
         
-        // initialize the white and black side's evaluation using the evaluation for their pawn structures
+        // initialize the white and black side's evaluation using the evaluation for their pawn structures 
+        // as well as with a bonus if the side has a bishop pair
         int whiteEval = evaluatePawnStructure(position.whitePawnsBB, position.blackPawnsBB, position);
         int blackEval = evaluatePawnStructure(position.blackPawnsBB, position.whitePawnsBB, position);
+
+        // bishop pair bonus
+        if (countSetBits64(position.whiteBishopsBB) == 2) whiteEval += BISHOP_PAIR_BONUS;
+        if (countSetBits64(position.blackBishopsBB) == 2) blackEval += BISHOP_PAIR_BONUS;
         
         for (int square = 0; square < 64; square++)
         {
@@ -265,8 +437,10 @@ namespace Eval
             if (BB::boardSquares[square] & boardPtr->currentPosition.whitePiecesBB)
             {
                 if (BB::boardSquares[square] & position.whitePawnsBB)        whiteEval += PAWN_VALUE + pst::pawnTable[63 - square];
-                else if (BB::boardSquares[square] & position.whiteKnightsBB) whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square];
-                else if (BB::boardSquares[square] & position.whiteBishopsBB) whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square];
+                else if (BB::boardSquares[square] & position.whiteKnightsBB) 
+                    whiteEval += KNIGHT_VALUE + pst::knightTable[63 - square] + knightStructureValue(square, SIDE_WHITE, position.whitePawnsBB, position.blackPawnsBB);
+                else if (BB::boardSquares[square] & position.whiteBishopsBB) 
+                    whiteEval += BISHOP_VALUE + pst::bishopTable[63 - square] + bishopStructureValue(square, SIDE_WHITE, position.whitePawnsBB, position.blackPawnsBB);
                 else if (BB::boardSquares[square] & position.whiteRooksBB)   whiteEval += ROOK_VALUE + pst::rookTable[63 - square] + rookStructureValue(square, position.occupiedBB, position.whitePiecesBB, position.blackPiecesBB, position.whiteRooksBB);
                 else if (BB::boardSquares[square] & position.whiteQueensBB)  whiteEval += QUEEN_VALUE + pst::queenTable[63 - square];
                 else if (BB::boardSquares[square] & position.whiteKingBB)
@@ -276,8 +450,10 @@ namespace Eval
             else
             {
                 if (BB::boardSquares[square] & position.blackPawnsBB)        blackEval += PAWN_VALUE + pst::pawnTable[square];
-                else if (BB::boardSquares[square] & position.blackKnightsBB) blackEval += KNIGHT_VALUE + pst::knightTable[square];
-                else if (BB::boardSquares[square] & position.blackBishopsBB) blackEval += BISHOP_VALUE + pst::bishopTable[square];
+                else if (BB::boardSquares[square] & position.blackKnightsBB)
+                    blackEval += KNIGHT_VALUE + pst::knightTable[square] + knightStructureValue(square, SIDE_BLACK, position.blackPawnsBB, position.whitePawnsBB);
+                else if (BB::boardSquares[square] & position.blackBishopsBB)
+                    blackEval += BISHOP_VALUE + pst::bishopTable[square] + bishopStructureValue(square, SIDE_BLACK, position.blackPawnsBB, position.whitePawnsBB);
                 else if (BB::boardSquares[square] & position.blackRooksBB)   blackEval += ROOK_VALUE + pst::rookTable[square] + rookStructureValue(square, position.occupiedBB, position.blackPiecesBB, position.whitePiecesBB, position.blackRooksBB);
                 else if (BB::boardSquares[square] & position.blackQueensBB)  blackEval += QUEEN_VALUE + pst::queenTable[square];
                 else if (BB::boardSquares[square] & position.blackKingBB)

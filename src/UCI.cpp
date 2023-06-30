@@ -22,12 +22,18 @@ namespace UCI
 		std::cout << "id author Nicolas f\n";
 
 		// options
-		std::cout << "option name Move Overhead type spin default 10 min 0 max 5000\n";
-		std::cout << "option name Threads type spin default 1 min 1 max 512\n";
-		std::cout << "option name Hash type spin default 16 min 1 max 33554432\n";
+		std::cout << "option name Hash type spin default 128 min 1 max 128\n";
 
 		// response indicating that the engine is ready for the next command
 		std::cout << "uciok\n";
+	}
+
+	// response to the "setoption" command
+	void respondSetoption(const std::vector<std::string>& commandVec)
+	{
+		// if the GUI is changing the size of Athena's transposition table
+		if (commandVec[2] == "Hash")
+			chessGame.setHashSize(std::stoi(commandVec[4]));
 	}
 
 	// response to the "isready" command
@@ -67,8 +73,8 @@ namespace UCI
 			chessGame.setPositionFEN(fenString);
 
 			// because the FEN string took up extra elements of the commands vector, the index at which the LAN moves (if any)
-			// starts is now at an index of 7
-			movesCommandIndex = 8;
+			// starts is now at an index of 9
+			movesCommandIndex = 9;
 		}
 
 		// iterate over any possible moves from the FEN string provided that have occured, and make them using the engine's abstractions

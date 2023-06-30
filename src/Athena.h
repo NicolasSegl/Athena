@@ -69,6 +69,8 @@ private:
     int getPieceValue(PieceTypes pieceType);
     int pieceValueTo_MVV_LVA_Index(int value);
     
+    int mTranspositionTableSize;
+
     // first element is the origin square, second element is the target square
     int mHistoryHeuristic[64][64];
 
@@ -114,6 +116,7 @@ public:
 	MoveData search(Board* board, float timeToMove);
     std::string getOpeningBookMove(Board* board, const std::vector<std::string>& lanStringHistory);
 
+    void setTranspositionTableSize(int newSize);
 	void setDepth(int newDepth) { mDepth = newDepth; }
     void setColour(Colour side) { mSide = side;      }
     Colour getColour()          { return mSide;      }

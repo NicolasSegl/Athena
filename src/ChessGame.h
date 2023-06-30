@@ -25,6 +25,7 @@ private:
 public:
 	void init();
 
+	void setHashSize(int newSize) { mAthena.setTranspositionTableSize(newSize); }
 	void setPositionFEN(const std::string& fenString);
 	std::string findBestMove(Colour side, float timeToMove);
 	void makeMoveLAN(const std::string& lanString);

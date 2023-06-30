@@ -18,8 +18,6 @@ const int TT_MOVE_SCORE     = 10000;
 const int KILLER_MOVE_SCORE = 10;
 const int MAX_KILLER_MOVES  = 2;
 
-const int TRANSPOSITION_TABLE_SIZE = 0x1000000;
-
 const bool CAN_NULL_MOVE    = true;
 const bool CANNOT_NULL_MOVE = false;
 
@@ -28,6 +26,8 @@ const int NO_TT_SCORE = -9999999;
 const int MAX_ROOT_DEPTH = 50;
 
 const int ASPIRATION_WINDOW = 50;
+
+const int MEGABYTE_SIZE = 1048576;
 
 // this number defines the number of nodes that will be searched between each check of time
 const int TIME_CHECK_INTERVAL = 100;
@@ -39,7 +39,10 @@ Athena::Athena()
     mDepth = 7;
     mMaxPly = 20;
 
-    mTranspositionTable = new TranspositionHashEntry[TRANSPOSITION_TABLE_SIZE];
+    // default transposition table size of 128MB
+    mTranspositionTableSize = 128 * MEGABYTE_SIZE / sizeof(TranspositionHashEntry);
+
+    mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
     clearTranspositionTable();
 
     // allocates enough memory for two killer moves per ply
@@ -61,8 +64,23 @@ Athena::Athena()
 // sets all the values in the transposition table to null (so we know that no data has yet been found at a given index)
 void Athena::clearTranspositionTable()
 {
-    for (int i = 0; i < TRANSPOSITION_TABLE_SIZE; i++)
+    for (int i = 0; i < mTranspositionTableSize; i++)
         mTranspositionTable[i].hashFlag = TranspositionHashEntry::NONEXISTENT;
+}
+
+// when the GUI sends the "setoption name Hash value <x>" command, we will have to change
+// the size of the transposition table. <x> is in megabytes
+void Athena::setTranspositionTableSize(int newSize)
+{
+    // get the new size of the table in megabytes
+    mTranspositionTableSize = newSize * MEGABYTE_SIZE / sizeof(TranspositionHashEntry);
+
+    // free the memory currently being used by the transposition table
+    if (mTranspositionTable)
+        delete[] mTranspositionTable;
+
+    mTranspositionTable = new TranspositionHashEntry[mTranspositionTableSize];
+    clearTranspositionTable();
 }
 
 // calls negamax and returns the best move that it has found
@@ -194,7 +212,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 									  TranspositionHashEntry::HashFlagValues flag)
 {
     // fetch the entry currently in the table by the given zobrist key
-    TranspositionHashEntry* currentEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
+    TranspositionHashEntry* currentEntry = &mTranspositionTable[zobristKey % mTranspositionTableSize];
 
     if (currentEntry->depth > depth)
         return;
@@ -210,7 +228,7 @@ void Athena::insertTranspositionEntry(ZobristKey::zkey zobristKey,
 // if no such entry exists yet, then a value is returned indicating that no entry could be found
 int Athena::readTranspositionEntry(ZobristKey::zkey zobristKey, int depth, int alpha, int beta)
 {
-	TranspositionHashEntry* hashEntry = &mTranspositionTable[zobristKey % TRANSPOSITION_TABLE_SIZE];
+	TranspositionHashEntry* hashEntry = &mTranspositionTable[zobristKey % mTranspositionTableSize];
 	if (hashEntry->zobristKey == zobristKey && hashEntry->depth >= depth)
 	{
         if (hashEntry->hashFlag == TranspositionHashEntry::EXACT)
@@ -264,8 +282,8 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
     Byte bestMoveOriginSquare = 255;
 
     // check to see if the zkey passed in as a paremeter has an associated best move in the transposition table
-    if (mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].zobristKey == zkey)
-        bestMoveOriginSquare = mTranspositionTable[zkey % TRANSPOSITION_TABLE_SIZE].bestMoveOriginSquare;
+    if (mTranspositionTable[zkey % mTranspositionTableSize].zobristKey == zkey)
+        bestMoveOriginSquare = mTranspositionTable[zkey % mTranspositionTableSize].bestMoveOriginSquare;
 
     for (int i = 0; i < moves.size(); i++)
     {

@@ -13,7 +13,7 @@
 const int INF = 1000000000;
 
 // move ordering constants
-const int MVV_LVA_OFFSET    = 10000000;
+const int CAPTURE_OFFSET    = 10000000;
 const int TT_MOVE_SCORE     = 10000;
 const int KILLER_MOVE_SCORE = 10;
 const int MAX_KILLER_MOVES  = 2;
@@ -275,7 +275,7 @@ int Athena::pieceValueTo_MVV_LVA_Index(int value)
 
 // gives moves weight values based on various factors. the higher the weight value, the earlier we should search that 
 // move, as as higher value indicates that the move might be better than another move with a lower value
-void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey)
+void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey::zkey zkey, Colour side)
 {
     /* consider as well the best move found in the transposition table */
     // stores the origin square of the best move in the transposition table
@@ -289,27 +289,29 @@ void Athena::assignMoveScores(std::vector<MoveData>& moves, Byte ply, ZobristKey
     {
         if (bestMoveOriginSquare != 255)
             if (moves[i].originSquare == bestMoveOriginSquare)
-                moves[i].moveScore += MVV_LVA_OFFSET + TT_MOVE_SCORE;
+                moves[i].moveScore += CAPTURE_OFFSET + TT_MOVE_SCORE;
 
         // if the move is violent (i.e. involves a piece being captured), then assign a move score based on
         // the attacking piece's type and the victim piece's type
         if (moves[i].capturedPieceBB)
-            moves[i].moveScore += MVV_LVA_OFFSET + MVV_LVATable[pieceValueTo_MVV_LVA_Index(moves[i].capturedPieceValue)]
-                                                               [pieceValueTo_MVV_LVA_Index(moves[i].pieceValue)];
+            moves[i].moveScore += CAPTURE_OFFSET + Eval::see(boardPtr, moves[i].targetSquare, side, moves[i].capturedPieceValue);
         else // otherwise, if the move is quiet (no piece being captured)
         {
             // check to see if the move was a killer move in a previous search (that is, check to see if the move
             // caused a significant advantage for the side moving)
+            bool isKillerMove = false;
             for (int j = 0; j < MAX_KILLER_MOVES; j++)
                 if (moves[i] == mKillerMoves[ply][j])
                 {
-                    moves[i].moveScore += MVV_LVA_OFFSET - KILLER_MOVE_SCORE;
+                    moves[i].moveScore += CAPTURE_OFFSET - KILLER_MOVE_SCORE;
+                    isKillerMove = true;
                     break;
                 }
 
             // add the weight of the history of that move (i.e., has this particular origin square and target square ever
             // given an advantage to the side that made the move?)
-            moves[i].moveScore += mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare];
+            if (!isKillerMove)
+                moves[i].moveScore += mHistoryHeuristic[moves[i].originSquare][moves[i].targetSquare];
         }
     }
 }
@@ -402,7 +404,7 @@ int Athena::quietMoveSearch(Colour side, int alpha, int beta, Byte ply)
 
     // assign priority to the moves in the vector
     ZobristKey::zkey positionZKey = boardPtr->getZobristKeyHistory()[boardPtr->getCurrentPly()];
-    assignMoveScores(moves, ply, positionZKey);
+    assignMoveScores(moves, ply, positionZKey, side);
 
     for (int i = 0; i < moves.size(); i++)
     {
@@ -553,7 +555,7 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
     MoveGeneration::calculateSideMoves(boardPtr, side, moves, false);
 
     // assign priorty (a value that determines how early the move should be searched) to the moves in the move vector
-    assignMoveScores(moves, ply, positionZKey);
+    assignMoveScores(moves, ply, positionZKey, side);
 
     // assign an infinitely small value to the maximum evalation (so that any move would increase it)
     int maxEval = -INF;

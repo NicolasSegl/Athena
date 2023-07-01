@@ -37,7 +37,7 @@ Athena::Athena()
 {   
     // default depth of 8 half-moves, with a maximum number of half-moves being searched of 20
     mDepth = 7;
-    mMaxPly = 20;
+    mMaxPly = 25;
 
     // default transposition table size of 128MB
     mTranspositionTableSize = 128 * MEGABYTE_SIZE / sizeof(TranspositionHashEntry);
@@ -541,6 +541,10 @@ int Athena::negamax(int depth, Colour side, int alpha, int beta, Byte ply, MoveD
         // if, without making any move, the evaluation comes back and is STILL better than the current worst move, make a cutoff
         if (eval >= beta)
             return eval;
+
+        // mate threat extension
+        if (eval <= -Eval::CHECKMATE_VALUE)
+            extension = 1;
     }
 
     // used for determining the transposition table entry's flag for this call to negamax

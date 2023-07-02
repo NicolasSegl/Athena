@@ -18,7 +18,7 @@ namespace UCI
 	void respondUCI()
 	{
 		// identification
-		std::cout << "id name Athena\n";
+		std::cout << "id name Athena 1.0.0\n";
 		std::cout << "id author Nicolas f\n";
 
 		// options

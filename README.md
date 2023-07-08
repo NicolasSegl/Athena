@@ -1,5 +1,5 @@
 # Athena
-Athena is a UCI compatible chess engine.
+Athena is a UCI compatible chess engine with an elo rating of approximately 1670 on the CCRL blitz index. 
 
 ## Features
 * Negamax
